@@ -1,6 +1,6 @@
 import pygame, random
 # I found out pygame has build-in collision detection after a big part of the game was already done...
-# so some parst are kinnd of weird improvisation
+# so some parst are kind of weird improvisation
 class RoboIsaac:
     def __init__(self) -> None:
         pygame.init()
@@ -9,7 +9,7 @@ class RoboIsaac:
         self.robot = Robot(self.borders) # robot object
 
         self.window = pygame.display.set_mode((1024, 768)) 
-        # initial plan was to make resolution changable, currently it is hard-coded
+        # initial plan was to make resolution configurable, currently it is hard-coded
         self.game_font = pygame.font.SysFont("Arial", 24)
         self.clock = pygame.time.Clock()
         pygame.display.set_caption("Robo-Isaac Game")
@@ -18,14 +18,14 @@ class RoboIsaac:
         self.new_level = True     # flag for new level generation
         self.coins = 0            # in-game coins
         self.kills = 0            # in-game score/kill counter
-        self.map = [  # 7x9 map, room = RGB tuple(rrr,ggg,bbb). supposed to be temporal but then I liked it
+        self.map = [  # 7x9 map, room = RGB tuple(rrr,ggg,bbb). supposed to be temporal, but then I liked it
                       # last number is a flag (it doesn't make the difference for the actual color)
                       # bb1 == room is discovered, visible on the map
                       # gg1 == is a secret room
                       # rr1 == room is cleared, no need to do some things upon entering etc.
                     ]
         self.current_room = 3,4    # starting room is always map[3][4]
-        self.upgrades = {}         # upgrades list genereted on level creation
+        self.upgrades = {}         # upgrades list generated on level creation
         self.dropped_coins = []    # coins currently on the floor        
         self.enemies = []          # enemies currently in the room
         self.map_on = False        # helper variable for displaying the mini-map 
@@ -35,9 +35,11 @@ class RoboIsaac:
         self.main_loop()
 
         ### helper functions ---vvv
-    def get_n(self,i:tuple)->list: # returns *n*eigbours (x,y) -> [(x+1,y),(x-1,y),(x,y+1),(x,y-1)] 
+    @staticmethod
+    def get_n(i:tuple)->list: # returns *n*eighbours (x,y) -> [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]
         return [(i[0]+1,i[1]),(i[0]-1,i[1]),(i[0],i[1]+1),(i[0],i[1]-1)]
-    def check_b(self,n:tuple)->bool: # check if outside the mab *b*orders
+    @staticmethod
+    def check_b(n:tuple)->bool: # check if outside the mab *b*orders
         return n[0] > 6 or n[0] < 0 or n[1] > 8 or n[1] < 0
     def rgb(self, i:tuple)->tuple: # just return the elements value (x,y)->(r,g,b)
         return self.map[i[0]][i[1]]
@@ -84,23 +86,23 @@ class RoboIsaac:
         self.robot.active_tears = []  # clear all tears
         self.dropped_coins = []       # clear coins
 
-        def how_many_n(room:tuple)->int: # how many neighbours exists (helper function)
-            n = self.get_n(room)                         # get neighbour cells
-            return sum(el in rooms_created for el in n)  # how many of them are rooms
+        def how_many_n(target_room:tuple)->int: # how many neighbours exists (helper function)
+            neighbour_rooms = self.get_n(target_room)                         # get neighbour cells
+            return sum(el in rooms_created for el in neighbour_rooms)  # how many of them are rooms
         
-        how_many_rooms = random.randint(1,2) + 6 + min(self.level, 8) * 2   # how many rooms to generete
+        how_many_rooms = random.randint(1,2) + 6 + min(self.level, 8) * 2   # how many rooms to generate
         rooms_created = [(3,4)] # currently existing rooms ((3,4) is always starting room)
         ends = []          # list of the dead end rooms
         
         while len(rooms_created) < how_many_rooms:    ### generate rooms
             for room in rooms_created:
                 neighbours = self.get_n(room)
-                if how_many_n(room) < 2:   # check there is no 2 adjasent rooms already
+                if how_many_n(room) < 2:   # check there is no 2 adjacent rooms already
                     for n in neighbours:
                         if len(rooms_created) == how_many_rooms: break # already have enough rooms
                         if n in rooms_created: continue  # already existing room
                         if self.check_b(n):continue      # out of the map range
-                        if how_many_n(n) >= 2: continue  # there're 2 adjacent to "n" rooms
+                        if how_many_n(n) >= 2: continue  # there are 2 adjacent to "n" rooms
                         if random.choice([True, False]): continue # 50% to give up
                         rooms_created.append(n)          # room added to the list
         #                               *** test generated map***
@@ -121,7 +123,7 @@ class RoboIsaac:
         #                            ***SPECIAL ROOMS***
         self.set_rgb((3,4), (251, 255, 251))       # **STARTING** room is white, visible from spawn
         for i in range(-1, -len(ends)-1, -1):      # reverse: should be less likely to get one near the start
-            if (3,4) not in self.get_n(ends[i]):   # **BOSS** room can not be ajacent to start room
+            if (3,4) not in self.get_n(ends[i]):   # **BOSS** room can not be adjacent to start room
                 self.set_rgb((ends[i]),(250,0,0))  # boss room created = red
                 break
         s = random.choice([i for i in ends if self.rgb(i) == (0,222,220)])   # random unused dead end room
@@ -129,19 +131,19 @@ class RoboIsaac:
         i = random.choice([i for i in ends if self.rgb(i) == (0,222,220)])
         self.set_rgb(i, (0, 255, 0))               # **UPGRADE** room = green
         
-        #**SECRET ROOM** = random non existing room among those that have most existing neighbours
+        #**SECRET ROOM** = random non-existing room among those that have most existing neighbours
         # NOTE: undiscovered secret room will not have a visible door or minimap visibility
         ##      to find it shoot the wall in the middle
         candidates = [] # [(n,(x,y)),...] where n is how many non-boss neighbours
         for room in rooms_created:
             for n in self.get_n(room):
                 if self.check_b(n): continue        # square is outside the map
-                if self.rgb(n) != (0,0,0): continue # square is occuppied
+                if self.rgb(n) != (0,0,0): continue # square is occupied
                 if (250,0,0) in [self.rgb(i) for i in self.get_n(n) if not self.check_b(i)]:
                         continue                             # the boss room is neighbour
                 rgb_in_range = [self.rgb(i) for i in self.get_n(n) if not self.check_b(i)]
                 r = len(rgb_in_range) - rgb_in_range.count((0,0,0)) # how many adjacent non-boss rooms
-                candidates.append((r,(n))) # candidate found
+                candidates.append((r, n)) # candidate found
         for i in range(4,0,-1): # i = how many existing neighbours, start with maximum 4, then 3...
             roms = [r[1] for r in candidates if r[0] == i] # list all rooms with "i" neighbours
             if roms: # if none with "i" neighbours go look with "i-1" in the next loop
@@ -177,18 +179,18 @@ class RoboIsaac:
                     self.robot.move_down = True
                 if event.key in (pygame.K_m, pygame.K_TAB):
                     self.map_on = True
-                if event.key == (pygame.K_SPACE) and self.game_over:
+                if event.key == pygame.K_SPACE and self.game_over:
                     # self.game_over = False
                     # self.new_level = True
                     # self.level = 1
                     # self.coins = 0
                     # self.kills = 0
                     RoboIsaac()
-                if event.key == (pygame.K_ESCAPE):
+                if event.key == pygame.K_ESCAPE:
                     if self.game_over: exit()
                     elif self.pause: self.pause = False
                     else: self.pause = True
-                if event.key == (pygame.K_p):
+                if event.key == pygame.K_p:
                     if self.pause: self.pause = False
                     else: self.pause = True
 
@@ -227,7 +229,7 @@ class RoboIsaac:
 
         pygame.display.flip()
     
-    def draw_frame(self):  # it could've be done much easier but now it is to late to redo everything =/
+    def draw_frame(self):  # it could've been done much easier, but now it is too late to redo everything =/
         top, left, right, bottom = self.borders
         frame_color = (50, 50, 50)
         if self.flag(self.current_room,1):
@@ -236,13 +238,13 @@ class RoboIsaac:
         text_color = (220, 220, 220)
         
         pygame.draw.rect(self.window, frame_color, (0, 0, 1024, top)) # top frame
-        pygame.draw.line(self.window, border_color, (left, top), (1024-right, top), width=5) # top border line
+        pygame.draw.line(self.window, border_color, (left, top), (1024-right, top), width=5) # top-border line
         pygame.draw.rect(self.window, frame_color, (0, 0, left, 768)) # left frame
-        pygame.draw.line(self.window, border_color, (left, top), (left, 768-bottom), width=5) # left border line
+        pygame.draw.line(self.window, border_color, (left, top), (left, 768-bottom), width=5) # left-border line
         pygame.draw.rect(self.window, frame_color, (1024-right, 0, right, 768)) # right frame
-        pygame.draw.line(self.window, border_color, (1024-right, top), (1024-right,768-bottom), width=5) # right border line
+        pygame.draw.line(self.window, border_color, (1024-right, top), (1024-right,768-bottom), width=5) # right-border line
         pygame.draw.rect(self.window, frame_color, (0, 768-bottom, 1024, bottom)) # bottom frame
-        pygame.draw.line(self.window, border_color, (1024-right, 768-bottom), (left, 768-bottom), width=5) # bottom border line
+        pygame.draw.line(self.window, border_color, (1024-right, 768-bottom), (left, 768-bottom), width=5) # bottom-border line
         
         current_level = self.game_font.render(f"Current Level: {self.level}{" "*90}MOOC   <3", True, text_color)
         self.window.blit(current_level, (left+left, (top-24)/2)) # draw current level counter
@@ -268,25 +270,26 @@ class RoboIsaac:
         coins = self.game_font.render(f"Coins: {self.coins}", True, text_color)
         self.window.blit(coins, (1024-right+right/5, 768/2 + 180)) # draw coins score
 
-        help = self.game_font.render(f"Move:  WASD  |  Shoot:  Arrows  |  Pause:  P or Esc  |  Map:  M or Tab", True, text_color)
-        self.window.blit(help, (left+left, 768-bottom*0.7)) # draw help
+        help_text = self.game_font.render(f"Move:  WASD  |  Shoot:  Arrows  |  Pause:  P or Esc  |  Map:  M or Tab", True, text_color)
+        self.window.blit(help_text, (left + left, 768 - bottom * 0.7)) # draw help
     
     def draw_room(self):
         ### draw new room if door entered ###
-        if self.robot.door_collision != None and self.flag(self.current_room, 0): # near the door and room is cleared
+        if self.robot.door_collision is not None and self.flag(self.current_room, 0): # near the door and room is cleared
         # if self.robot.door_collision != None: # test option instead of above (no cleared requirement)
             direction = self.robot.door_collision
 
-            def navigate(direction:str):   # returns connected room in "direction"
-                if direction == "left":
+            def navigate(move_direction:str):   # returns connected room in "direction"
+                if move_direction == "left":
                     return self.current_room[0], self.current_room[1]-1
-                if direction == "right":
+                if move_direction == "right":
                     return self.current_room[0], self.current_room[1]+1
-                if direction == "top":
+                if move_direction == "top":
                     return self.current_room[0]-1, self.current_room[1]
-                if direction == "bottom":
+                if move_direction == "bottom":
                     return self.current_room[0]+1, self.current_room[1]
-                
+                return None
+
             if self.flag(navigate(direction),2):        # if visible => should have a door
                 self.current_room = navigate(direction) # assign new current room
                 if direction in ["left", "right"]:
@@ -334,9 +337,9 @@ class RoboIsaac:
     def draw_doors(self):
         top, left, right, bottom = self.borders
         door = pygame.image.load("door.png")
-        neigbours = [i for i in self.get_n(self.current_room) if not self.check_b(i)]
-        position = {"top":(((1024-left-right)/2+left-door.get_width()/2,top/2)),
-                    "bottom":(((1024-left-right)/2+left-door.get_width()/2,768-bottom*1.5)),
+        neighbours = [i for i in self.get_n(self.current_room) if not self.check_b(i)]
+        position = {"top":((1024 - left - right) / 2 + left - door.get_width() / 2, top / 2),
+                    "bottom":((1024 - left - right) / 2 + left - door.get_width() / 2, 768 - bottom * 1.5),
                     "left":(left*0.7,(768-top-bottom)/2+top-door.get_height()/2),
                     "right":(1024-right*1.15,(768-top-bottom)/2+top-door.get_height()/2)}
         
@@ -345,9 +348,9 @@ class RoboIsaac:
                 return "bottom" if room[0] > self.current_room[0] else "top"
             else: return "right" if room[1] > self.current_room[1] else "left"
         def secret_door_hit(room):      # check if hidden door was hit
-            pos = find_position(room)
+            secret_pos = find_position(room)
             for tear in [i for i in self.robot.active_tears if i.is_dead == True]:
-                if pos == tear.direction:
+                if secret_pos == tear.direction:
                     x1 = (1024-left-right)/2+left-door.get_width()
                     x2 = (1024-left-right)/2+left+door.get_width()
                     y1 = (768-top-bottom)/2+top-door.get_height()/2
@@ -356,7 +359,7 @@ class RoboIsaac:
                         return True
             return False
         
-        for i in neigbours:        # go thru connected rooms
+        for i in neighbours:        # go thru connected rooms
             if self.flag(i, 1):    # except secret room if it was
                 if not secret_door_hit(i) and not self.flag(i, 2):
                     continue       # not hit and not discovered
@@ -451,7 +454,7 @@ class RoboIsaac:
             if len([i for i in self.enemies if i.is_dead == True]) == len(self.enemies): # all enemies killed!
                 if self.rgb(self.current_room) == (250,0,1):               # boss room:
                     self.draw_upgrade((self.enemies[0].x, self.enemies[0].y))  ## spawn item
-                elif not self.rgb(self.current_room) == (251,0,1) and not self.current_room == (3,4):                                                      # non boss room:
+                elif not self.rgb(self.current_room) == (251,0,1) and not self.current_room == (3,4):                                                      # non-boss room:
                     for i in range(random.randint(0,3)):                     ## spawn some coins
                         self.dropped_coins.append(Coin(self.borders))
                     self.set_flag(self.current_room, 0)   # if all dead => set "cleared" room flag
@@ -512,8 +515,8 @@ class Robot:
         self.total_damage = self.damage * self.tear_size
         # meaning 4 is the starting damage and at maximum tear size all damage is basically doubled
 
-        self.x = 1024/2
-        self.y = 768/2
+        self.x = int(1024/2)
+        self.y = int(768/2)
         self.move_left = False
         self.move_right = False
         self.move_up = False
@@ -528,12 +531,12 @@ class Robot:
         if self.move_right:
             if self.x < 1024-self.right_border - self.image.get_width():
                 self.x += speed
-            elif (768)/2-60 < self.y < (768)/2+5:   # pressing against the right wall
+            elif 768 /2-60 < self.y < 768 /2+5:   # pressing against the right wall
                 self.door_collision = "right"       ## so we set the direction
         if self.move_left:
             if self.x > 0+self.left_border:
                 self.x -= speed
-            elif (768)/2-60 < self.y < (768)/2+5:
+            elif 768/2-60 < self.y < 768 /2+5:
                 self.door_collision = "left"
         if self.move_up:
             if self.y > 0+self.top_border-50:
@@ -551,7 +554,7 @@ class Robot:
             self.active_tears.append(Tear(self.x, self.y, direction, self.tear_speed, self.tear_color, self.tear_size, self.borders)) # add new Tear object
         else:                              # active list is full
             for i in range(0, len(self.active_tears)): # look if there are any "dead" tears that can be overwritten
-                if self.active_tears[i].is_dead == True:
+                if self.active_tears[i].is_dead:
                     self.active_tears[i] = Tear(self.x, self.y, direction, self.tear_speed, self.tear_color, self.tear_size, self.borders)
                     break
     
@@ -600,28 +603,28 @@ class Tear:
         self.size = self.size*4   # increase size
         self.is_dead = True       # and set the dead status
         
-class Upgrade():
+class Upgrade:
     def __init__(self) -> None:
         def lottery():             ### generate a random upgrade ###
-            colors = { # v--   how many upggrades possible    --v  == weight(chance) to spawn
+            colors = { # v--   how many upgrades possible    --v  == weight(chance) to spawn
             (200,200,50):5,  # yellow-ish     - speed upgrade  (5)
             (200,50,50):20,  # red-ish        - DMG upgrade    (20+)
             (50,50,200):9,   # blue-ish       - tears upgrade  (9)
             (50,200,50):16,  # green-ish      - tear velocity  (16)
             (100,25,25):4    # deep-red-ish   - tear size  (4)
         }
-            lotery = []
+            lottery_colors = []
             for color in colors:
                 for i in range(colors[color]):
-                    lotery.append(color)
-            return random.choice(lotery)
+                    lottery_colors.append(color)
+            return random.choice(lottery_colors)
         
         self.color = lottery()       # color = type of the upgrade
 
         # self.position = ()     # x,y coordinates  # maybe not needed
         # self.is_dead = False         # set True when item is picked up
 
-class Coin():
+class Coin:
     def __init__(self, borders:tuple) -> None:
         self.image = pygame.image.load("coin.png")
         top_border, left_border, right_border, bottom_border = borders
@@ -629,7 +632,7 @@ class Coin():
         self.y = random.randint(top_border, 768-bottom_border - self.image.get_height())
         self.is_dead = False
 
-class Enemy():
+class Enemy:
     def __init__(self, level:int, borders) -> None:
         self.top_border, self.left_border, self.right_border, self.bottom_border = borders
         self.level = level              # need to know level for monster stats progression
@@ -692,7 +695,8 @@ if __name__ == "__main__":
 - [non issue?]  tear is drawn after robot respawn losing the extra life
 - [fix later?]  sometimes no items in the shop/item room
 - [won't fix]   sometimes no enemies in the room
-      |-> reason: doesn't happen too often and it is ok if some rooms do not have enemies 
+      |-> reason: doesn't happen too often and it is ok if some rooms do not have enemies
+      [update] - likely first room after defeating a boss (on this or next floor, not counting start) - need to fix
 
             ** POTENTIAL FUTURE IMPROVEMENTS **
 - rewrite code to OOP and split into multiple files and in accordance with good practices
@@ -705,4 +709,8 @@ if __name__ == "__main__":
 - [done] boss hp bar
 - [done] increase the sage zone near the doors
     |-> from 100 to 150 pixels
+- add HP up chance to secret rooms
+- add a chance for devil deal / angel room to spawn after boss
+    - devil deal - two random upgrades one HP price each
+    - angel room - two random upgrades (choose only one)
 '''
