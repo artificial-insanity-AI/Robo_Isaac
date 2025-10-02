@@ -37,4 +37,4 @@ POTENTIAL FUTURE IMPROVEMENTS
     - devil deal - two random upgrades one HP price each
     - angel room - two random upgrades (choose only one)
 new test line alex
-- new line ksu(note: resolved conflict)
+new line ksu(note: resolved conflict)
