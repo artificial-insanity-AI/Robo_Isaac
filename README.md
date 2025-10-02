@@ -23,14 +23,14 @@ BUGS (those are only the latest ones out of many or current bugs)
 POTENTIAL FUTURE IMPROVEMENTS
 
 - rewrite code to OOP and split into multiple files and in accordance with good practices
-- prevent next-level door spawning right under the robot (teleport robot away or make the dor inactive)
+- prevent next-level door spawning right under the robot (teleport robot away or make the door inactive)
 - balance power-level of the enemies and the player at higher levels
 - add super enemies with flushy colors and various size
 - boss shoots huge lasers from time to time
 - [done] darker color of unexplored rooms on the minimap
 - [done] do not allow to buy HP if at maximum already
 - [done] boss hp bar
-- [done] increase the sage zone near the doors
+- [done] increase the safe zone near the doors
   |-> from 100 to 150 pixels
 - add HP up chance to secret rooms
 - add a chance for devil deal / angel room to spawn after boss
