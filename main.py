@@ -1,7 +1,8 @@
 import pygame, random
 
-from assets import ROBOT_IMG, COIN_IMG, MONSTER_IMG, BOSS_IMG, DOOR_IMG
+from assets import ROBOT_IMG, MONSTER_IMG, BOSS_IMG, DOOR_IMG
 from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+from entities.coin import Coin
 
 
 # I found out pygame has build-in collision detection after a big part of the game was already done...
@@ -628,14 +629,6 @@ class Upgrade:
 
         # self.position = ()     # x,y coordinates  # maybe not needed
         # self.is_dead = False         # set True when item is picked up
-
-class Coin:
-    def __init__(self, borders:tuple) -> None:
-        self.image = COIN_IMG
-        top_border, left_border, right_border, bottom_border = borders
-        self.x = random.randint(left_border, SCREEN_WIDTH-right_border - self.image.get_width())
-        self.y = random.randint(top_border, SCREEN_HEIGHT-bottom_border - self.image.get_height())
-        self.is_dead = False
 
 class Enemy:
     def __init__(self, level:int, borders) -> None:
