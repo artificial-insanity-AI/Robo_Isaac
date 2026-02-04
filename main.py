@@ -3,6 +3,8 @@ import pygame, random
 from assets import ROBOT_IMG, MONSTER_IMG, BOSS_IMG, DOOR_IMG
 from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from entities.coin import Coin
+from entities.tear import Tear
+from entities.upgrade import Upgrade
 
 
 # I found out pygame has build-in collision detection after a big part of the game was already done...
@@ -574,61 +576,6 @@ class Robot:
         elif color == (100,25,25):
             self.tear_size = min(self.tear_size + 1, 8)
             self.total_damage = self.damage * self.tear_size
-
-class Tear:
-    def __init__(self, x:int, y:int, direction:str, speed:int, color:tuple, size:int, borders:tuple) -> None:
-        self.top, self.left, self.right, self.bottom = borders
-        self.x = x + 25
-        self.y = y + 15
-        self.speed = min(speed, 20)  # tear speed limit is 20
-        self.direction = direction
-        self.color = color
-        self.size = size
-        self.is_dead = False # is "dead" means it is no longer on the screen and can be overwritten by a new tear
-
-    def move_tear(self):
-        if self.direction == "left":
-            self.x -= self.speed
-            if self.x <= self.left:      # hit the wall
-                self.tear_collision()
-        if self.direction == "right":
-            self.x += self.speed
-            if self.x >= SCREEN_WIDTH - self.right:
-                self.tear_collision()
-        if self.direction == "top":
-            self.y -= self.speed
-            if self.y <= self.top:
-                self.tear_collision()
-        if self.direction == "bottom":
-            self.y += self.speed
-            if self.y >= SCREEN_HEIGHT - self.bottom:
-                self.tear_collision()
-    
-    def tear_collision(self):     # called on tear collision
-        self.color = (255,0,0)    # change color
-        self.size = self.size*4   # increase size
-        self.is_dead = True       # and set the dead status
-        
-class Upgrade:
-    def __init__(self) -> None:
-        def lottery():             ### generate a random upgrade ###
-            colors = { # v--   how many upgrades possible    --v  == weight(chance) to spawn
-            (200,200,50):5,  # yellow-ish     - speed upgrade  (5)
-            (200,50,50):20,  # red-ish        - DMG upgrade    (20+)
-            (50,50,200):9,   # blue-ish       - tears upgrade  (9)
-            (50,200,50):16,  # green-ish      - tear velocity  (16)
-            (100,25,25):4    # deep-red-ish   - tear size  (4)
-        }
-            lottery_colors = []
-            for color in colors:
-                for i in range(colors[color]):
-                    lottery_colors.append(color)
-            return random.choice(lottery_colors)
-        
-        self.color = lottery()       # color = type of the upgrade
-
-        # self.position = ()     # x,y coordinates  # maybe not needed
-        # self.is_dead = False         # set True when item is picked up
 
 class Enemy:
     def __init__(self, level:int, borders) -> None:
