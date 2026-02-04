@@ -336,7 +336,7 @@ class RoboIsaac:
 
     def draw_doors(self):
         top, left, right, bottom = self.borders
-        door = pygame.image.load("door.png")
+        door = pygame.image.load("assets/door.png")
         neighbours = [i for i in self.get_n(self.current_room) if not self.check_b(i)]
         position = {"top":((1024 - left - right) / 2 + left - door.get_width() / 2, top / 2),
                     "bottom":((1024 - left - right) / 2 + left - door.get_width() / 2, 768 - bottom * 1.5),
@@ -503,7 +503,7 @@ class Robot:
     def __init__(self, borders:tuple) -> None:
         self.borders = borders
         self.top_border, self.left_border, self.right_border, self.bottom_border = borders
-        self.image = pygame.image.load("robot.png")
+        self.image = pygame.image.load("assets/robot.png")
         self.speed = 3         # min 3 max 7
         self.tear_speed = 4   # min 4 max 20
         self.tears = 2        # min 2 max 10
@@ -626,7 +626,7 @@ class Upgrade:
 
 class Coin:
     def __init__(self, borders:tuple) -> None:
-        self.image = pygame.image.load("coin.png")
+        self.image = pygame.image.load("assets/coin.png")
         top_border, left_border, right_border, bottom_border = borders
         self.x = random.randint(left_border, 1024-right_border - self.image.get_width())
         self.y = random.randint(top_border, 768-bottom_border - self.image.get_height())
@@ -636,7 +636,7 @@ class Enemy:
     def __init__(self, level:int, borders) -> None:
         self.top_border, self.left_border, self.right_border, self.bottom_border = borders
         self.level = level              # need to know level for monster stats progression
-        self.image = pygame.image.load("monster.png")
+        self.image = pygame.image.load("assets/monster.png")
         self.speed = random.randint(3,min((4+level//3), 7))  # 3 - 7
         self.hp = random.randint(8,(15+level*5))    # 8 - no limit
 
