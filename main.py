@@ -1,14 +1,18 @@
 import pygame, random
+
+from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+
+
 # I found out pygame has build-in collision detection after a big part of the game was already done...
 # so some parst are kind of weird improvisation
 class RoboIsaac:
     def __init__(self) -> None:
         pygame.init()
 
-        self.borders = (75, 75, 150, 75) # size of the borders
+        self.borders = BORDERS
         self.robot = Robot(self.borders) # robot object
 
-        self.window = pygame.display.set_mode((1024, 768)) 
+        self.window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         # initial plan was to make resolution configurable, currently it is hard-coded
         self.game_font = pygame.font.SysFont("Arial", 24)
         self.clock = pygame.time.Clock()
@@ -62,7 +66,7 @@ class RoboIsaac:
             self.check_events()
             self.draw_window()
             # print(self.rgb(self.current_room)) # test
-            self.clock.tick(60)
+            self.clock.tick(FPS)
 
     def generate_new_level(self): # generate current level map
 
@@ -237,14 +241,14 @@ class RoboIsaac:
         else: border_color = self.rgb(self.current_room)
         text_color = (220, 220, 220)
         
-        pygame.draw.rect(self.window, frame_color, (0, 0, 1024, top)) # top frame
-        pygame.draw.line(self.window, border_color, (left, top), (1024-right, top), width=5) # top-border line
-        pygame.draw.rect(self.window, frame_color, (0, 0, left, 768)) # left frame
-        pygame.draw.line(self.window, border_color, (left, top), (left, 768-bottom), width=5) # left-border line
-        pygame.draw.rect(self.window, frame_color, (1024-right, 0, right, 768)) # right frame
-        pygame.draw.line(self.window, border_color, (1024-right, top), (1024-right,768-bottom), width=5) # right-border line
-        pygame.draw.rect(self.window, frame_color, (0, 768-bottom, 1024, bottom)) # bottom frame
-        pygame.draw.line(self.window, border_color, (1024-right, 768-bottom), (left, 768-bottom), width=5) # bottom-border line
+        pygame.draw.rect(self.window, frame_color, (0, 0, SCREEN_WIDTH, top)) # top frame
+        pygame.draw.line(self.window, border_color, (left, top), (SCREEN_WIDTH-right, top), width=5) # top-border line
+        pygame.draw.rect(self.window, frame_color, (0, 0, left, SCREEN_HEIGHT)) # left frame
+        pygame.draw.line(self.window, border_color, (left, top), (left, SCREEN_HEIGHT-bottom), width=5) # left-border line
+        pygame.draw.rect(self.window, frame_color, (SCREEN_WIDTH-right, 0, right, SCREEN_HEIGHT)) # right frame
+        pygame.draw.line(self.window, border_color, (SCREEN_WIDTH-right, top), (SCREEN_WIDTH-right,SCREEN_HEIGHT-bottom), width=5) # right-border line
+        pygame.draw.rect(self.window, frame_color, (0, SCREEN_HEIGHT-bottom, SCREEN_WIDTH, bottom)) # bottom frame
+        pygame.draw.line(self.window, border_color, (SCREEN_WIDTH-right, SCREEN_HEIGHT-bottom), (left, SCREEN_HEIGHT-bottom), width=5) # bottom-border line
         
         current_level = self.game_font.render(f"Current Level: {self.level}{" "*90}MOOC   <3", True, text_color)
         self.window.blit(current_level, (left+left, (top-24)/2)) # draw current level counter
@@ -253,25 +257,25 @@ class RoboIsaac:
             self.window.blit(self.robot.image, ((left - self.robot.image.get_width())/2-5, top*i + i*25))
 
         stats = self.game_font.render(f"Robot Stats: ", True, text_color)
-        self.window.blit(stats, (1024-right+right/10, top+40)) # draw stats header
+        self.window.blit(stats, (SCREEN_WIDTH-right+right/10, top+40)) # draw stats header
         speed = self.game_font.render(f"Speed: {self.robot.speed}", True, (200,200,50))
-        self.window.blit(speed, (1024-right+right/5, top+80)) # draw speed stat
+        self.window.blit(speed, (SCREEN_WIDTH-right+right/5, top+80)) # draw speed stat
         damage = self.game_font.render(f"Dmg: {self.robot.total_damage}", True, (200,00,00))
-        self.window.blit(damage, (1024-right+right/5, top+120)) # draw damage stat
+        self.window.blit(damage, (SCREEN_WIDTH-right+right/5, top+120)) # draw damage stat
         tears = self.game_font.render(f"Tears: {self.robot.tears}", True, (25,25,255))
-        self.window.blit(tears, (1024-right+right/5, top+160)) # draw tears stat (max tears on screen)
+        self.window.blit(tears, (SCREEN_WIDTH-right+right/5, top+160)) # draw tears stat (max tears on screen)
         tears_speed = self.game_font.render(f"Velocity: {self.robot.tear_speed}", True, (50,200,50))
-        self.window.blit(tears_speed, (1024-right+right/5, top+200)) # draw tears velocity stat
+        self.window.blit(tears_speed, (SCREEN_WIDTH-right+right/5, top+200)) # draw tears velocity stat
 
         stats = self.game_font.render(f"Total Score: ", True, text_color)
-        self.window.blit(stats, (1024-right+right/10, 768/2 + 100)) # draw score header
+        self.window.blit(stats, (SCREEN_WIDTH-right+right/10, SCREEN_HEIGHT/2 + 100)) # draw score header
         kills = self.game_font.render(f"Kills: {self.kills}", True, text_color)
-        self.window.blit(kills, (1024-right+right/5, 768/2 + 140)) # draw kills score
+        self.window.blit(kills, (SCREEN_WIDTH-right+right/5, SCREEN_HEIGHT/2 + 140)) # draw kills score
         coins = self.game_font.render(f"Coins: {self.coins}", True, text_color)
-        self.window.blit(coins, (1024-right+right/5, 768/2 + 180)) # draw coins score
+        self.window.blit(coins, (SCREEN_WIDTH-right+right/5, SCREEN_HEIGHT/2 + 180)) # draw coins score
 
         help_text = self.game_font.render(f"Move:  WASD  |  Shoot:  Arrows  |  Pause:  P or Esc  |  Map:  M or Tab", True, text_color)
-        self.window.blit(help_text, (left + left, 768 - bottom * 0.7)) # draw help
+        self.window.blit(help_text, (left + left, SCREEN_HEIGHT - bottom * 0.7)) # draw help
     
     def draw_room(self):
         ### draw new room if door entered ###
@@ -293,9 +297,9 @@ class RoboIsaac:
             if self.flag(navigate(direction),2):        # if visible => should have a door
                 self.current_room = navigate(direction) # assign new current room
                 if direction in ["left", "right"]:
-                    self.robot.x = 1024/2 + (1024/2 - self.robot.x  - 130)  # position robot
+                    self.robot.x = SCREEN_WIDTH/2 + (SCREEN_WIDTH/2 - self.robot.x  - 130)  # position robot
                 if direction in ["top", "bottom"]:                          # approximately
-                    self.robot.y = 768/2 + (768/2 - self.robot.y - 140)     # on opposite side
+                    self.robot.y = SCREEN_HEIGHT/2 + (SCREEN_HEIGHT/2 - self.robot.y - 140)     # on opposite side
                 self.robot.active_tears = []         # delete all tears
                 self.dropped_coins = []              # dropped coins are lost if room exited
         ### what to do in the room ###
@@ -338,10 +342,10 @@ class RoboIsaac:
         top, left, right, bottom = self.borders
         door = pygame.image.load("assets/door.png")
         neighbours = [i for i in self.get_n(self.current_room) if not self.check_b(i)]
-        position = {"top":((1024 - left - right) / 2 + left - door.get_width() / 2, top / 2),
-                    "bottom":((1024 - left - right) / 2 + left - door.get_width() / 2, 768 - bottom * 1.5),
-                    "left":(left*0.7,(768-top-bottom)/2+top-door.get_height()/2),
-                    "right":(1024-right*1.15,(768-top-bottom)/2+top-door.get_height()/2)}
+        position = {"top":((SCREEN_WIDTH - left - right) / 2 + left - door.get_width() / 2, top / 2),
+                    "bottom":((SCREEN_WIDTH - left - right) / 2 + left - door.get_width() / 2, SCREEN_HEIGHT - bottom * 1.5),
+                    "left":(left*0.7,(SCREEN_HEIGHT-top-bottom)/2+top-door.get_height()/2),
+                    "right":(SCREEN_WIDTH-right*1.15,(SCREEN_HEIGHT-top-bottom)/2+top-door.get_height()/2)}
         
         def find_position(room:tuple):  # door! where?
             if room[1] == self.current_room[1]:
@@ -351,10 +355,10 @@ class RoboIsaac:
             secret_pos = find_position(room)
             for tear in [i for i in self.robot.active_tears if i.is_dead == True]:
                 if secret_pos == tear.direction:
-                    x1 = (1024-left-right)/2+left-door.get_width()
-                    x2 = (1024-left-right)/2+left+door.get_width()
-                    y1 = (768-top-bottom)/2+top-door.get_height()/2
-                    y2 = (768-top-bottom)/2+top+door.get_height()/2
+                    x1 = (SCREEN_WIDTH-left-right)/2+left-door.get_width()
+                    x2 = (SCREEN_WIDTH-left-right)/2+left+door.get_width()
+                    y1 = (SCREEN_HEIGHT-top-bottom)/2+top-door.get_height()/2
+                    y2 = (SCREEN_HEIGHT-top-bottom)/2+top+door.get_height()/2
                     if (x1 <= tear.x <= x2) or (y1 <= tear.y <= y2):
                         return True
             return False
@@ -432,7 +436,7 @@ class RoboIsaac:
                         pygame.draw.rect(self.window, (155,0,0), pos_r, width=100) #  red robot
                         pygame.display.flip()
                         pygame.time.wait(1000)
-                        pygame.draw.rect(self.window,(25,0,0),(top,left,1024-left-right,768-top-bottom),width=1000)
+                        pygame.draw.rect(self.window,(25,0,0),(top,left,SCREEN_WIDTH-left-right,SCREEN_HEIGHT-top-bottom),width=1000)
                         pygame.display.flip()                                      #  red screen
                         if self.robot.health_points >= 0:          # if was not last life
                             self.enemies = []
@@ -486,7 +490,7 @@ class RoboIsaac:
     def draw_game_over(self):
         if self.game_over:
             top, left, right, bottom = self.borders
-            pygame.draw.rect(self.window,(15,0,0),(top,left,1024-left-right,768-top-bottom),width=1000)
+            pygame.draw.rect(self.window,(15,0,0),(top,left,SCREEN_WIDTH-left-right,SCREEN_HEIGHT-top-bottom),width=1000)
             text = self.game_font.render(f"GAME OVER", True, (222,222,222))
             text2 = self.game_font.render(f"Press Space to start over", True, (222,222,222))
             text3 = self.game_font.render(f"Press ESC to quit", True, (222,222,222))
@@ -515,8 +519,8 @@ class Robot:
         self.total_damage = self.damage * self.tear_size
         # meaning 4 is the starting damage and at maximum tear size all damage is basically doubled
 
-        self.x = int(1024/2)
-        self.y = int(768/2)
+        self.x = int(SCREEN_WIDTH/2)
+        self.y = int(SCREEN_HEIGHT/2)
         self.move_left = False
         self.move_right = False
         self.move_up = False
@@ -529,24 +533,24 @@ class Robot:
         self.door_collision = None       
         speed = min(self.speed, 7)  # speeed limit is 7
         if self.move_right:
-            if self.x < 1024-self.right_border - self.image.get_width():
+            if self.x < SCREEN_WIDTH-self.right_border - self.image.get_width():
                 self.x += speed
-            elif 768 /2-60 < self.y < 768 /2+5:   # pressing against the right wall
+            elif SCREEN_HEIGHT /2-60 < self.y < SCREEN_HEIGHT /2+5:   # pressing against the right wall
                 self.door_collision = "right"       ## so we set the direction
         if self.move_left:
             if self.x > 0+self.left_border:
                 self.x -= speed
-            elif 768/2-60 < self.y < 768 /2+5:
+            elif SCREEN_HEIGHT/2-60 < self.y < SCREEN_HEIGHT /2+5:
                 self.door_collision = "left"
         if self.move_up:
             if self.y > 0+self.top_border-50:
                 self.y -= speed
-            elif 1024/2-80 < self.x < 1024/2-50:
+            elif SCREEN_WIDTH/2-80 < self.x < SCREEN_WIDTH/2-50:
                 self.door_collision = "top"
         if self.move_down:
-            if self.y <= 768-self.bottom_border - self.image.get_height():
+            if self.y <= SCREEN_HEIGHT-self.bottom_border - self.image.get_height():
                 self.y += speed
-            elif 1024/2-80 < self.x < 1024/2-50:
+            elif SCREEN_WIDTH/2-80 < self.x < SCREEN_WIDTH/2-50:
                 self.door_collision = "bottom"
 
     def shoot(self, direction:str):        # generate a new tear if possible
@@ -587,7 +591,7 @@ class Tear:
                 self.tear_collision()
         if self.direction == "right":
             self.x += self.speed
-            if self.x >= 1024 - self.right:
+            if self.x >= SCREEN_WIDTH - self.right:
                 self.tear_collision()
         if self.direction == "top":
             self.y -= self.speed
@@ -595,7 +599,7 @@ class Tear:
                 self.tear_collision()
         if self.direction == "bottom":
             self.y += self.speed
-            if self.y >= 768 - self.bottom:
+            if self.y >= SCREEN_HEIGHT - self.bottom:
                 self.tear_collision()
     
     def tear_collision(self):     # called on tear collision
@@ -628,8 +632,8 @@ class Coin:
     def __init__(self, borders:tuple) -> None:
         self.image = pygame.image.load("assets/coin.png")
         top_border, left_border, right_border, bottom_border = borders
-        self.x = random.randint(left_border, 1024-right_border - self.image.get_width())
-        self.y = random.randint(top_border, 768-bottom_border - self.image.get_height())
+        self.x = random.randint(left_border, SCREEN_WIDTH-right_border - self.image.get_width())
+        self.y = random.randint(top_border, SCREEN_HEIGHT-bottom_border - self.image.get_height())
         self.is_dead = False
 
 class Enemy:
@@ -641,8 +645,8 @@ class Enemy:
         self.hp = random.randint(8,(15+level*5))    # 8 - no limit
 
         buffer = 150                    # safe perimeter "buffer" 
-        self.x = random.randint(self.left_border+buffer, 1024-buffer-self.right_border - self.image.get_width())
-        self.y = random.randint(self.top_border+buffer, 768-buffer-self.bottom_border - self.image.get_height())
+        self.x = random.randint(self.left_border+buffer, SCREEN_WIDTH-buffer-self.right_border - self.image.get_width())
+        self.y = random.randint(self.top_border+buffer, SCREEN_HEIGHT-buffer-self.bottom_border - self.image.get_height())
         self.steps_counter = 0
         self.direction = random.randint(1,4)
         self.is_dead = False
@@ -650,7 +654,7 @@ class Enemy:
     def move(self):    
         self.change_direction()
         if self.direction == 1:
-            if self.x < 1024-self.right_border - self.image.get_width():
+            if self.x < SCREEN_WIDTH-self.right_border - self.image.get_width():
                 self.x += self.speed
         if self.direction == 2:
             if self.x > 0+self.left_border:
@@ -659,7 +663,7 @@ class Enemy:
             if self.y > 0+self.top_border-50:
                 self.y -= self.speed
         if self.direction == 4:
-            if self.y <= 768-self.bottom_border - self.image.get_height():
+            if self.y <= SCREEN_HEIGHT-self.bottom_border - self.image.get_height():
                 self.y += self.speed
         self.steps_counter += self.speed
     
