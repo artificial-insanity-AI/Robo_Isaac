@@ -1,8 +1,12 @@
-import pygame, random
+import random
 
-from assets import ROBOT_IMG, MONSTER_IMG, BOSS_IMG, DOOR_IMG
+import pygame
+
+from assets import ROBOT_IMG, DOOR_IMG
 from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+from entities.boss import Boss
 from entities.coin import Coin
+from entities.enemy import Enemy
 from entities.tear import Tear
 from entities.upgrade import Upgrade
 
@@ -576,53 +580,6 @@ class Robot:
         elif color == (100,25,25):
             self.tear_size = min(self.tear_size + 1, 8)
             self.total_damage = self.damage * self.tear_size
-
-class Enemy:
-    def __init__(self, level:int, borders) -> None:
-        self.top_border, self.left_border, self.right_border, self.bottom_border = borders
-        self.level = level              # need to know level for monster stats progression
-        self.image = MONSTER_IMG
-        self.speed = random.randint(3,min((4+level//3), 7))  # 3 - 7
-        self.hp = random.randint(8,(15+level*5))    # 8 - no limit
-
-        buffer = 150                    # safe perimeter "buffer" 
-        self.x = random.randint(self.left_border+buffer, SCREEN_WIDTH-buffer-self.right_border - self.image.get_width())
-        self.y = random.randint(self.top_border+buffer, SCREEN_HEIGHT-buffer-self.bottom_border - self.image.get_height())
-        self.steps_counter = 0
-        self.direction = random.randint(1,4)
-        self.is_dead = False
-    
-    def move(self):    
-        self.change_direction()
-        if self.direction == 1:
-            if self.x < SCREEN_WIDTH-self.right_border - self.image.get_width():
-                self.x += self.speed
-        if self.direction == 2:
-            if self.x > 0+self.left_border:
-                self.x -= self.speed
-        if self.direction == 3:
-            if self.y > 0+self.top_border-50:
-                self.y -= self.speed
-        if self.direction == 4:
-            if self.y <= SCREEN_HEIGHT-self.bottom_border - self.image.get_height():
-                self.y += self.speed
-        self.steps_counter += self.speed
-    
-    def change_direction(self):
-        if self.steps_counter >= 20:                    # after enough steps were made
-            self.steps_counter = 0                      # reset the counter
-            if not random.randint(0,2):                 # ~33% chance to change the direction
-                self.direction = random.randint(1,4)    # generate random direction (including the same one)
-
-class Boss(Enemy):       # basically just an enemy with increased image size and stats
-    def __init__(self, level: int, borders) -> None:
-        super().__init__(level, borders)
-        self.image = BOSS_IMG
-        self.speed += 1
-        self.hp *= 10
-        self.starting_hp = self.hp
-        self.x = 500
-        self.y = 400
 
 if __name__ == "__main__":
     RoboIsaac()
