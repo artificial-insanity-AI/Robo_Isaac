@@ -8,166 +8,62 @@ from entities.boss import Boss
 from entities.coin import Coin
 from entities.enemy import Enemy
 from entities.robot import Robot
-from entities.upgrade import Upgrade
+from systems.level_generator import LevelGenerator
 
 
 # I found out pygame has build-in collision detection after a big part of the game was already done...
 # so some parst are kind of weird improvisation
+
 class RoboIsaac:
     def __init__(self) -> None:
         pygame.init()
 
-        self.borders = BORDERS
-        self.robot = Robot(self.borders) # robot object
+        self.floor = 1              # current game level(stage) number
+        self.level = None           # will hold Level object
+        self.current_room = None    # will hold Level object
 
+        # per-level state
+        self.robot = Robot(BORDERS) # robot object
+        self.dropped_coins = []    # coins currently on the floor
+        self.enemies = []          # enemies currently in the room
+        self.new_level = True       # flag for new level generation
+        self.coins = 0              # in-game coins
+        self.kills = 0              # in-game score/kill counter
+
+        # UI & window
         self.window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         # initial plan was to make resolution configurable, currently it is hard-coded
         self.game_font = pygame.font.SysFont("Arial", 24)
         self.clock = pygame.time.Clock()
         pygame.display.set_caption("Robo-Isaac Game")
 
-        self.level = 1            # game level(stage)
-        self.new_level = True     # flag for new level generation
-        self.coins = 0            # in-game coins
-        self.kills = 0            # in-game score/kill counter
-        self.map = [  # 7x9 map, room = RGB tuple(rrr,ggg,bbb). supposed to be temporal, but then I liked it
-                      # last number is a flag (it doesn't make the difference for the actual color)
-                      # bb1 == room is discovered, visible on the map
-                      # gg1 == is a secret room
-                      # rr1 == room is cleared, no need to do some things upon entering etc.
-                    ]
-        self.current_room = 3,4    # starting room is always map[3][4]
-        self.upgrades = {}         # upgrades list generated on level creation
-        self.dropped_coins = []    # coins currently on the floor        
-        self.enemies = []          # enemies currently in the room
-        self.map_on = False        # helper variable for displaying the mini-map 
-        self.game_over = False     # helper variable for displaying game-over screen
-        self.pause = False         # helper variable for displaying pause screen
+        # helper variables
+        self.map_on = False        # displaying the mini-map
+        self.game_over = False     # displaying game-over screen
+        self.pause = False         # displaying pause screen
 
         self.main_loop()
 
-        ### helper functions ---vvv
-    @staticmethod
-    def get_n(i:tuple)->list: # returns *n*eighbours (x,y) -> [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]
-        return [(i[0]+1,i[1]),(i[0]-1,i[1]),(i[0],i[1]+1),(i[0],i[1]-1)]
-    @staticmethod
-    def check_b(n:tuple)->bool: # check if outside the mab *b*orders
-        return n[0] > 6 or n[0] < 0 or n[1] > 8 or n[1] < 0
-    def rgb(self, i:tuple)->tuple: # just return the elements value (x,y)->(r,g,b)
-        return self.map[i[0]][i[1]]
-    def set_rgb(self, room:tuple, rgb:tuple)->None: # set new rgb value for (x,y) room
-        self.map[room[0]][room[1]] = rgb
-    def flag(self, room:tuple, flag:int)->bool: # flag position: 0 or 1 or 2
-        return str(self.rgb(room)[flag])[-1] == "1" # True if flag == 1
-    def set_flag(self, room:tuple, flag:int)->None: # set flag to 1
-        flag_str = str(self.map[room[0]][room[1]][flag])
-        flag_str = flag_str[0:-1] + "1"
-        rgb_as_list = [self.rgb(room)[0], self.rgb(room)[1], self.rgb(room)[2]]
-        rgb_as_list[flag] = int(flag_str)
-        self.set_rgb(room, tuple(rgb_as_list))
-        ### helper functions ---^^^
+    def start_level(self):
+        gen = LevelGenerator(self.floor)
+        self.level = gen.generate()
+        self.current_room = self.level.start_room
+
+        # reset per-level state
+        self.robot.active_tears = []    # clear all tears
+        self.dropped_coins = []         # clear coins
+        self.enemies = []               # clear enemies
+        self.new_level = False          # new_level = False
     
     def main_loop(self): ####################---main---#########################
         while True:
             if self.new_level:
-                self.generate_new_level()
+                self.start_level()
             self.check_events()
             self.draw_window()
             # print(self.rgb(self.current_room)) # test
             self.clock.tick(FPS)
 
-    def generate_new_level(self): # generate current level map
-
-        self.current_room = (3,4) # set starting room <-- and reset the map --v
-        self.map = [ #7x9 map, room = RGB tuple(rrr,ggg,bbb). supposed to be temporal but then I liked it
-                    [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)],
-                    [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)],
-                    [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)],
-                    [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)],
-                    [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)],
-                    [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)],
-                    [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)]
-                     #bb1 == room discovered, visible on the map
-                     #gg1 == is a secret room
-                     #rr1 == room is cleared, no need to do some things upon entering 
-        ]
-        self.upgrades = {          # pre-generate upgrade objects for each room
-            (0, 255, 1):Upgrade(),    # green room upgrade
-            (250, 255, 1):Upgrade(),  # yellow room upgrade
-            (250, 0, 1): Upgrade()}   # red room upgrade
-        self.robot.active_tears = []  # clear all tears
-        self.dropped_coins = []       # clear coins
-
-        def how_many_n(target_room:tuple)->int: # how many neighbours exists (helper function)
-            neighbour_rooms = self.get_n(target_room)                         # get neighbour cells
-            return sum(el in rooms_created for el in neighbour_rooms)  # how many of them are rooms
-        
-        how_many_rooms = random.randint(1,2) + 6 + min(self.level, 8) * 2   # how many rooms to generate
-        rooms_created = [(3,4)] # currently existing rooms ((3,4) is always starting room)
-        ends = []          # list of the dead end rooms
-        
-        while len(rooms_created) < how_many_rooms:    ### generate rooms
-            for room in rooms_created:
-                neighbours = self.get_n(room)
-                if how_many_n(room) < 2:   # check there is no 2 adjacent rooms already
-                    for n in neighbours:
-                        if len(rooms_created) == how_many_rooms: break # already have enough rooms
-                        if n in rooms_created: continue  # already existing room
-                        if self.check_b(n):continue      # out of the map range
-                        if how_many_n(n) >= 2: continue  # there are 2 adjacent to "n" rooms
-                        if random.choice([True, False]): continue # 50% to give up
-                        rooms_created.append(n)          # room added to the list
-        #                               *** test generated map***
-        many_n = False   # clusters helper flag
-        for r in rooms_created:
-            if how_many_n(r) == 1 and r != (3,4):  # look for dead ends excluding starting room
-                ends.append(r)                     # add it to the list of dead ends
-            if how_many_n(r) > 3: many_n = True    # if a room somehow got too many neighbours
-            
-        #     incorrect amount of rooms?            not enough "ends"?   clusters?
-        if how_many_rooms != len(set(rooms_created)) or len(ends) < 3 or many_n:
-            self.generate_new_level()             # generate the level anew
-            return
-        #                    *** passed tests. generate map layout ***
-        for r in rooms_created:                 # mark all created rooms
-            self.set_rgb(r, (0,222,220))        # with the "regular room" color 
-        self.new_level = False                  # turn off the new_lvl flag 
-        #                            ***SPECIAL ROOMS***
-        self.set_rgb((3,4), (251, 255, 251))       # **STARTING** room is white, visible from spawn
-        for i in range(-1, -len(ends)-1, -1):      # reverse: should be less likely to get one near the start
-            if (3,4) not in self.get_n(ends[i]):   # **BOSS** room can not be adjacent to start room
-                self.set_rgb((ends[i]),(250,0,0))  # boss room created = red
-                break
-        s = random.choice([i for i in ends if self.rgb(i) == (0,222,220)])   # random unused dead end room
-        self.set_rgb(s, (250, 255, 0))             # **SHOP** room = yellow
-        i = random.choice([i for i in ends if self.rgb(i) == (0,222,220)])
-        self.set_rgb(i, (0, 255, 0))               # **UPGRADE** room = green
-        
-        #**SECRET ROOM** = random non-existing room among those that have most existing neighbours
-        # NOTE: undiscovered secret room will not have a visible door or minimap visibility
-        ##      to find it shoot the wall in the middle
-        candidates = [] # [(n,(x,y)),...] where n is how many non-boss neighbours
-        for room in rooms_created:
-            for n in self.get_n(room):
-                if self.check_b(n): continue        # square is outside the map
-                if self.rgb(n) != (0,0,0): continue # square is occupied
-                if (250,0,0) in [self.rgb(i) for i in self.get_n(n) if not self.check_b(i)]:
-                        continue                             # the boss room is neighbour
-                rgb_in_range = [self.rgb(i) for i in self.get_n(n) if not self.check_b(i)]
-                r = len(rgb_in_range) - rgb_in_range.count((0,0,0)) # how many adjacent non-boss rooms
-                candidates.append((r, n)) # candidate found
-        for i in range(4,0,-1): # i = how many existing neighbours, start with maximum 4, then 3...
-            roms = [r[1] for r in candidates if r[0] == i] # list all rooms with "i" neighbours
-            if roms: # if none with "i" neighbours go look with "i-1" in the next loop
-                s = random.choice(roms) # pick random location
-                self.set_rgb(s, (0,1,60)) # **secret** room created
-                break                     ## 1 == secret room flag
-
-        #########---for testing purposes---########
-        # for i in candidates: ### for testing possible secret locations
-        # #     self.map[i[1][0]][i[1][1]] = (0,0,251)
-        # for i in rooms_created: # turn on visibility for all rooms
-        #     self.set_flag(i,2)  ## secret room visibility? edit flag at creation
 
 
     def check_events(self):
@@ -194,7 +90,7 @@ class RoboIsaac:
                 if event.key == pygame.K_SPACE and self.game_over:
                     # self.game_over = False
                     # self.new_level = True
-                    # self.level = 1
+                    # self.floor = 1
                     # self.coins = 0
                     # self.kills = 0
                     RoboIsaac()
@@ -242,11 +138,11 @@ class RoboIsaac:
         pygame.display.flip()
     
     def draw_frame(self):  # it could've been done much easier, but now it is too late to redo everything =/
-        top, left, right, bottom = self.borders
+        top, left, right, bottom = BORDERS
         frame_color = (50, 50, 50)
-        if self.flag(self.current_room,1):
+        if self.level.flag(self.current_room,1):
             border_color = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
-        else: border_color = self.rgb(self.current_room)
+        else: border_color = self.level.rgb(self.current_room)
         text_color = (220, 220, 220)
         
         pygame.draw.rect(self.window, frame_color, (0, 0, SCREEN_WIDTH, top)) # top frame
@@ -258,7 +154,7 @@ class RoboIsaac:
         pygame.draw.rect(self.window, frame_color, (0, SCREEN_HEIGHT-bottom, SCREEN_WIDTH, bottom)) # bottom frame
         pygame.draw.line(self.window, border_color, (SCREEN_WIDTH-right, SCREEN_HEIGHT-bottom), (left, SCREEN_HEIGHT-bottom), width=5) # bottom-border line
         
-        current_level = self.game_font.render(f"Current Level: {self.level}{" "*90}MOOC   <3", True, text_color)
+        current_level = self.game_font.render(f"Current Level: {self.floor}{" "*90}MOOC   <3", True, text_color)
         self.window.blit(current_level, (left+left, (top-24)/2)) # draw current level counter
 
         for i in range(1,self.robot.health_points + 1): # draw "extra life" indicators on the left
@@ -287,7 +183,7 @@ class RoboIsaac:
     
     def draw_room(self):
         ### draw new room if door entered ###
-        if self.robot.door_collision is not None and self.flag(self.current_room, 0): # near the door and room is cleared
+        if self.robot.door_collision is not None and self.level.flag(self.current_room, 0): # near the door and room is cleared
         # if self.robot.door_collision != None: # test option instead of above (no cleared requirement)
             direction = self.robot.door_collision
 
@@ -302,7 +198,7 @@ class RoboIsaac:
                     return self.current_room[0]+1, self.current_room[1]
                 return None
 
-            if self.flag(navigate(direction),2):        # if visible => should have a door
+            if self.level.flag(navigate(direction),2):        # if visible => should have a door
                 self.current_room = navigate(direction) # assign new current room
                 if direction in ["left", "right"]:
                     self.robot.x = SCREEN_WIDTH/2 + (SCREEN_WIDTH/2 - self.robot.x  - 130)  # position robot
@@ -311,33 +207,33 @@ class RoboIsaac:
                 self.robot.active_tears = []         # delete all tears
                 self.dropped_coins = []              # dropped coins are lost if room exited
         ### what to do in the room ###
-        if not self.flag(self.current_room, 0):            # uncleared room?
-            if self.rgb(self.current_room) == (0, 255, 1):     # green room?
+        if not self.level.flag(self.current_room, 0):            # uncleared room?
+            if self.level.rgb(self.current_room) == (0, 255, 1):     # green room?
                 self.draw_upgrade((450, 375))                    ## spawn upgrade, approx middle if the room
-            elif self.rgb(self.current_room) == (250, 255, 1): # shop room?
+            elif self.level.rgb(self.current_room) == (250, 255, 1): # shop room?
                 self.draw_upgrade((350, 375))                    ## draw upgrade  (free)
                 self.draw_extra_life((550, 365))                 ## draw extra life (cost coins)
                 stats = self.game_font.render(f"CHOOSE ONE", True, (0, 0, 0))
                 self.window.blit(stats, (400, 320))
                 stats = self.game_font.render(f"free                                 $20", True, (0, 0, 0))
                 self.window.blit(stats, (350, 450))
-            elif self.rgb(self.current_room) == (0,1,61):      # secret room?
+            elif self.level.rgb(self.current_room) == (0,1,61):      # secret room?
                 for i in range(random.randint(5,9)):             ## spawn some coins
-                    self.dropped_coins.append(Coin(self.borders))
-                self.set_flag(self.current_room, 0)              ## and set "cleared" flag
-            elif self.rgb(self.current_room) == (250,0,1):     # boss room?
+                    self.dropped_coins.append(Coin(BORDERS))
+                self.level.set_flag(self.current_room, 0)              ## and set "cleared" flag
+            elif self.level.rgb(self.current_room) == (250,0,1):     # boss room?
                 if not self.enemies:                             ## add boss enemy
-                    self.enemies.append(Boss(self.level, self.borders))
+                    self.enemies.append(Boss(self.floor, BORDERS))
                     ### draw BOSS HP bar
                 hp = self.enemies[0].hp                          ## get current hp
                 one_bar = int(self.enemies[0].starting_hp/10)    ## calculate based on initial boss hp
                 hp_bar = f"BOSS HP: [{"="*(hp//one_bar):_<10}]"
                 text = self.game_font.render(hp_bar, True, (255, 0, 0))
                 self.window.blit(text, (400, (75-24)/2))
-            elif self.rgb(self.current_room) == (0,222,221):   # regular uncleared room:
+            elif self.level.rgb(self.current_room) == (0,222,221):   # regular uncleared room:
                 if not self.enemies:                           # spawn some enemies
-                    for i in range(random.randint(1,3) + self.level//2):
-                        self.enemies.append(Enemy(self.level, self.borders))
+                    for i in range(random.randint(1,3) + self.floor//2):
+                        self.enemies.append(Enemy(self.floor, BORDERS))
         else: self.draw_doors() # !- only if cleared
 
     def draw_tears(self):
@@ -347,9 +243,9 @@ class RoboIsaac:
                 pygame.draw.circle(self.window, tear.color, (tear.x, tear.y), tear.size, tear.size)
 
     def draw_doors(self):
-        top, left, right, bottom = self.borders
+        top, left, right, bottom = BORDERS
         door = DOOR_IMG
-        neighbours = [i for i in self.get_n(self.current_room) if not self.check_b(i)]
+        neighbours = [i for i in self.level.neighbors(self.current_room) if not self.level.in_bounds(i)]
         position = {"top":((SCREEN_WIDTH - left - right) / 2 + left - door.get_width() / 2, top / 2),
                     "bottom":((SCREEN_WIDTH - left - right) / 2 + left - door.get_width() / 2, SCREEN_HEIGHT - bottom * 1.5),
                     "left":(left*0.7,(SCREEN_HEIGHT-top-bottom)/2+top-door.get_height()/2),
@@ -372,25 +268,25 @@ class RoboIsaac:
             return False
         
         for i in neighbours:        # go thru connected rooms
-            if self.flag(i, 1):    # except secret room if it was
-                if not secret_door_hit(i) and not self.flag(i, 2):
+            if self.level.flag(i, 1):    # except secret room if it was
+                if not secret_door_hit(i) and not self.level.flag(i, 2):
                     continue       # not hit and not discovered
-            if self.rgb(i) == (0,0,0): continue # also skip empty cells
-            self.set_flag(i, 2)           # set room as visible 
+            if self.level.rgb(i) == (0,0,0): continue # also skip empty cells
+            self.level.set_flag(i, 2)           # set room as visible
             self.window.blit(door, position[find_position(i)])  # draw a door icon
 
-        if self.rgb(self.current_room) == (251,0,1):  # cleared boss room
+        if self.level.rgb(self.current_room) == (251,0,1):  # cleared boss room
             pos = pygame.Rect(450,350, door.get_width(), door.get_height())
             randwidth = random.randint(2,5)
             randcolor=(random.randint(0,255),random.randint(0,255),random.randint(0,255))
             pygame.draw.rect(self.window, randcolor, pos, width=randwidth) # flashy border
             self.window.blit(door, pos)               # draw a door icon on the floor
             if pos.colliderect(self.robot.image.get_rect(topleft = (self.robot.x, self.robot.y))):
-                self.level += 1                       # increase level count
+                self.floor += 1                       # increase level count
                 self.new_level = True                 # set generate new level flag
 
     def draw_upgrade(self, position:tuple):
-        upgrd = self.upgrades[self.rgb(self.current_room)]
+        upgrd = self.level.upgrades[self.level.rgb(self.current_room)]
         # if upgrd.is_dead: return
         x,y = position
         randcolor=(random.randint(0,255),random.randint(0,255),random.randint(0,255))
@@ -400,7 +296,7 @@ class RoboIsaac:
         pygame.draw.rect(self.window, randcolor, pos, width=randwidth) # flashy border
         if pos.colliderect(self.robot.image.get_rect(topleft = (self.robot.x, self.robot.y))):
             self.robot.upgrade(upgrd.color)       # upgrade robot stat
-            self.set_flag(self.current_room,0)    # and set "cleared" flag for the room
+            self.level.set_flag(self.current_room,0)    # and set "cleared" flag for the room
 
     def draw_extra_life(self, position:tuple):
         image = self.robot.image
@@ -415,7 +311,7 @@ class RoboIsaac:
                 pygame.draw.rect(self.window, color, pos, width=randwidth) # flashy border
             else:
                 self.robot.health_points += 1         # add one life
-                self.set_flag(self.current_room,0)    # and set "cleared" flag for the room
+                self.level.set_flag(self.current_room,0)    # and set "cleared" flag for the room
                 self.coins -= 20
 
     def draw_coins(self):
@@ -429,7 +325,7 @@ class RoboIsaac:
                     self.coins += 1                              # and increase coins counter  
 
     def draw_enemies(self):
-        top, left, right, bottom = self.borders
+        top, left, right, bottom = BORDERS
         if self.enemies:
             for enemy in self.enemies:
                 if not enemy.is_dead:                                    # if enemy alive
@@ -464,12 +360,12 @@ class RoboIsaac:
                                 tear.tear_collision()                    # call method for tear explosion
                                 pygame.draw.circle(self.window, tear.color, (tear.x, tear.y), tear.size, tear.size)
             if len([i for i in self.enemies if i.is_dead == True]) == len(self.enemies): # all enemies killed!
-                if self.rgb(self.current_room) == (250,0,1):               # boss room:
+                if self.level.rgb(self.current_room) == (250,0,1):               # boss room:
                     self.draw_upgrade((self.enemies[0].x, self.enemies[0].y))  ## spawn item
-                elif not self.rgb(self.current_room) == (251,0,1) and not self.current_room == (3,4):                                                      # non-boss room:
+                elif not self.level.rgb(self.current_room) == (251,0,1) and not self.current_room == (3,4):                                                      # non-boss room:
                     for i in range(random.randint(0,3)):                     ## spawn some coins
-                        self.dropped_coins.append(Coin(self.borders))
-                    self.set_flag(self.current_room, 0)   # if all dead => set "cleared" room flag
+                        self.dropped_coins.append(Coin(BORDERS))
+                    self.level.set_flag(self.current_room, 0)   # if all dead => set "cleared" room flag
                     self.enemies = []                     ## reset the enemies list
 
 
@@ -482,11 +378,11 @@ class RoboIsaac:
             pygame.draw.rect(self.window, (40, 40, 40), (150, 150, 9*k, 7*k)) # mini-map background
             for x in range(9):                            # traverse self.map
                 for y in range(7):
-                    if self.flag((y,x), 2):               # check room visible flag
-                        if self.flag((y,x), 0):           # check cleared flag
-                            color = self.rgb((y,x))       # use it's real color
+                    if self.level.flag((y,x), 2):               # check room visible flag
+                        if self.level.flag((y,x), 0):           # check cleared flag
+                            color = self.level.rgb((y,x))       # use it's real color
                         else:
-                            c = self.rgb((y,x))       # use darker shades:
+                            c = self.level.rgb((y,x))       # use darker shades:
                             color = max(c[0]-100, 0),max(c[1]-100, 0),max(c[2]-100, 0)
                     else: color = (0,0,0)             # else the room is black on the map until found
                     pygame.draw.rect(self.window, color, (150+x*k, 150+y*k, k, k)) # fill current square with color
@@ -497,7 +393,7 @@ class RoboIsaac:
     
     def draw_game_over(self):
         if self.game_over:
-            top, left, right, bottom = self.borders
+            top, left, right, bottom = BORDERS
             pygame.draw.rect(self.window,(15,0,0),(top,left,SCREEN_WIDTH-left-right,SCREEN_HEIGHT-top-bottom),width=1000)
             text = self.game_font.render(f"GAME OVER", True, (222,222,222))
             text2 = self.game_font.render(f"Press Space to start over", True, (222,222,222))
