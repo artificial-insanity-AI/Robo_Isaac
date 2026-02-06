@@ -31,5 +31,3 @@ class Level:
 
     def in_bounds(self, r:tuple)->bool:
         return r[0] > 6 or r[0] < 0 or r[1] > 8 or r[1] < 0
-
-    # TODO: get_upgrade(room) and consume_upgrade(room) move here?
