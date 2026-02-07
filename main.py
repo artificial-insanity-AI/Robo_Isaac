@@ -187,19 +187,10 @@ class RoboIsaac:
         # if self.robot.door_collision != None: # test option instead of above (no cleared requirement)
             direction = self.robot.door_collision
 
-            def navigate(move_direction:str):   # returns connected room in "direction"
-                if move_direction == "left":
-                    return self.current_room[0], self.current_room[1]-1
-                if move_direction == "right":
-                    return self.current_room[0], self.current_room[1]+1
-                if move_direction == "top":
-                    return self.current_room[0]-1, self.current_room[1]
-                if move_direction == "bottom":
-                    return self.current_room[0]+1, self.current_room[1]
-                return None
+            next_room = self.level.navigate(self.current_room, direction)
+            if self.level.flag(next_room, 2):           # if visible => should have a door
+                self.current_room = next_room           # assign new current room
 
-            if self.level.flag(navigate(direction),2):        # if visible => should have a door
-                self.current_room = navigate(direction) # assign new current room
                 if direction in ["left", "right"]:
                     self.robot.x = SCREEN_WIDTH/2 + (SCREEN_WIDTH/2 - self.robot.x  - 130)  # position robot
                 if direction in ["top", "bottom"]:                          # approximately

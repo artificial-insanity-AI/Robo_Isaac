@@ -10,6 +10,18 @@ class Level:
         self.start_room = start_room
         self.upgrades = upgrades
 
+    def navigate(self, room, direction): # returns connected room in "direction"
+        x, y = room
+        if direction == "left":
+            return x, y-1
+        if direction == "right":
+            return x, y+1
+        if direction == "top":
+            return x-1, y
+        if direction == "bottom":
+            return x+1, y
+        return None
+
     def rgb(self, room: tuple) -> tuple:    # converts room (x,y)->(r,g,b)
         return self.grid[room[0]][room[1]]
 
