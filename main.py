@@ -180,23 +180,36 @@ class RoboIsaac:
 
         help_text = self.game_font.render(f"Move:  WASD  |  Shoot:  Arrows  |  Pause:  P or Esc  |  Map:  M or Tab", True, text_color)
         self.window.blit(help_text, (left + left, SCREEN_HEIGHT - bottom * 0.7)) # draw help
-    
+
+    def update_room_transition(self):
+        if self.robot.door_collision is None:           # not near the door
+            return
+
+        if not self.level.flag(self.current_room, 0):   # room is not cleared
+            return
+
+        direction = self.robot.door_collision
+        next_room = self.level.navigate(self.current_room, direction)
+
+        if not self.level.flag(next_room, 2):   # not visible => should not have a door
+            return
+
+        self.current_room = next_room
+
+        if direction in ["left", "right"]:
+            self.robot.x = SCREEN_WIDTH/2 + (SCREEN_WIDTH/2 - self.robot.x  - 130)
+        if direction in ["top", "bottom"]:
+            self.robot.y = SCREEN_HEIGHT/2 + (SCREEN_HEIGHT/2 - self.robot.y - 140)
+
+        self.robot.active_tears = []
+        self.dropped_coins = []
+
+
+
     def draw_room(self):
-        ### draw new room if door entered ###
-        if self.robot.door_collision is not None and self.level.flag(self.current_room, 0): # near the door and room is cleared
-        # if self.robot.door_collision != None: # test option instead of above (no cleared requirement)
-            direction = self.robot.door_collision
 
-            next_room = self.level.navigate(self.current_room, direction)
-            if self.level.flag(next_room, 2):           # if visible => should have a door
-                self.current_room = next_room           # assign new current room
+        self.update_room_transition()
 
-                if direction in ["left", "right"]:
-                    self.robot.x = SCREEN_WIDTH/2 + (SCREEN_WIDTH/2 - self.robot.x  - 130)  # position robot
-                if direction in ["top", "bottom"]:                          # approximately
-                    self.robot.y = SCREEN_HEIGHT/2 + (SCREEN_HEIGHT/2 - self.robot.y - 140)     # on opposite side
-                self.robot.active_tears = []         # delete all tears
-                self.dropped_coins = []              # dropped coins are lost if room exited
         ### what to do in the room ###
         if not self.level.flag(self.current_room, 0):            # uncleared room?
             if self.level.rgb(self.current_room) == (0, 255, 1):     # green room?
