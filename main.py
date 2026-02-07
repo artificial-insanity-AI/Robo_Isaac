@@ -118,6 +118,8 @@ class RoboIsaac:
                 exit()
 
     def draw_window(self):                       # when and what to draw on the screen
+        self.update_game()
+
         self.window.fill((150, 150, 150))
         self.draw_frame()
         if self.game_over:
@@ -181,6 +183,10 @@ class RoboIsaac:
         help_text = self.game_font.render(f"Move:  WASD  |  Shoot:  Arrows  |  Pause:  P or Esc  |  Map:  M or Tab", True, text_color)
         self.window.blit(help_text, (left + left, SCREEN_HEIGHT - bottom * 0.7)) # draw help
 
+    def update_game(self):
+        self.update_room_transition()
+        self.update_room_logic()
+
     def update_room_transition(self):
         if self.robot.door_collision is None:           # not near the door
             return
@@ -204,40 +210,61 @@ class RoboIsaac:
         self.robot.active_tears = []
         self.dropped_coins = []
 
+    def update_room_logic(self):
+
+        if self.level.flag(self.current_room, 0):   # uncleared room?
+            return
+
+        room_color = self.level.rgb(self.current_room)
+
+        if room_color == (0, 255, 1):   # UPGRADE ROOM
+            pass
+
+        elif room_color == (250, 255, 1):   # SHOP ROOM
+            pass
+
+        elif room_color == (0, 1, 61):      # SECRET ROOM
+            for _ in range(random.randint(5, 9)):
+                self.dropped_coins.append(Coin(BORDERS))    # spawn some coins
+            self.level.set_flag(self.current_room, 0)       # set "cleared" flag
+
+        elif room_color == (250, 0, 1):     # BOSS ROOM
+            if not self.enemies:            # add boss enemy
+                self.enemies.append(Boss(self.floor, BORDERS))
+
+        elif room_color == (0, 222, 221):   # NORMAL ROOM
+            if not self.enemies:            # spawn some enemies
+                for _ in range(random.randint(1, 3) + self.floor // 2):
+                    self.enemies.append(Enemy(self.floor, BORDERS))
 
 
     def draw_room(self):
 
-        self.update_room_transition()
+        room_color = self.level.rgb(self.current_room)
 
         ### what to do in the room ###
-        if not self.level.flag(self.current_room, 0):            # uncleared room?
-            if self.level.rgb(self.current_room) == (0, 255, 1):     # green room?
-                self.draw_upgrade((450, 375))                    ## spawn upgrade, approx middle if the room
-            elif self.level.rgb(self.current_room) == (250, 255, 1): # shop room?
-                self.draw_upgrade((350, 375))                    ## draw upgrade  (free)
-                self.draw_extra_life((550, 365))                 ## draw extra life (cost coins)
+        if not self.level.flag(self.current_room, 0):       # uncleared room?
+            if room_color == (0, 255, 1):                   # green room?
+                self.draw_upgrade((450, 375))   # spawn upgrade, approx middle if the room
+            elif room_color == (250, 255, 1):               # shop room?
+                self.draw_upgrade((350, 375))               # draw upgrade  (free)
+                self.draw_extra_life((550, 365))            # draw extra life (cost coins)
+
                 stats = self.game_font.render(f"CHOOSE ONE", True, (0, 0, 0))
                 self.window.blit(stats, (400, 320))
+
                 stats = self.game_font.render(f"free                                 $20", True, (0, 0, 0))
                 self.window.blit(stats, (350, 450))
-            elif self.level.rgb(self.current_room) == (0,1,61):      # secret room?
-                for i in range(random.randint(5,9)):             ## spawn some coins
-                    self.dropped_coins.append(Coin(BORDERS))
-                self.level.set_flag(self.current_room, 0)              ## and set "cleared" flag
-            elif self.level.rgb(self.current_room) == (250,0,1):     # boss room?
-                if not self.enemies:                             ## add boss enemy
-                    self.enemies.append(Boss(self.floor, BORDERS))
+
+            elif room_color == (250,0,1):       # boss room?
                     ### draw BOSS HP bar
-                hp = self.enemies[0].hp                          ## get current hp
-                one_bar = int(self.enemies[0].starting_hp/10)    ## calculate based on initial boss hp
-                hp_bar = f"BOSS HP: [{"="*(hp//one_bar):_<10}]"
-                text = self.game_font.render(hp_bar, True, (255, 0, 0))
-                self.window.blit(text, (400, (75-24)/2))
-            elif self.level.rgb(self.current_room) == (0,222,221):   # regular uncleared room:
-                if not self.enemies:                           # spawn some enemies
-                    for i in range(random.randint(1,3) + self.floor//2):
-                        self.enemies.append(Enemy(self.floor, BORDERS))
+                if self.enemies:
+                    hp = self.enemies[0].hp                          ## get current hp
+                    one_bar = int(self.enemies[0].starting_hp/10)    ## calculate based on initial boss hp
+                    hp_bar = f"BOSS HP: [{"="*(hp//one_bar):_<10}]"
+                    text = self.game_font.render(hp_bar, True, (255, 0, 0))
+                    self.window.blit(text, (400, (75-24)/2))
+
         else: self.draw_doors() # !- only if cleared
 
     def draw_tears(self):
