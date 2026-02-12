@@ -1,4 +1,5 @@
 import random
+import sys
 
 import pygame
 
@@ -15,6 +16,7 @@ from systems.level_generator import LevelGenerator
 # so some parst are kind of weird improvisation
 class RoboIsaac:
     def __init__(self) -> None:
+        self.running = False
         pygame.init()
 
         self.floor = 1              # current game level(stage) number
@@ -54,14 +56,17 @@ class RoboIsaac:
         self.enemies = []               # clear enemies
         self.new_level = False          # new_level = False
 
-    def run(self): ####################---main---#########################
-        while True:
+    def run(self):
+        self.running = True
+        while self.running:
             if self.new_level:
                 self.start_level()
             self.check_events()
             self.draw_window()
-            # print(self.rgb(self.current_room)) # test
             self.clock.tick(FPS)
+
+        pygame.quit()
+        sys.exit()
 
 
 
@@ -87,14 +92,9 @@ class RoboIsaac:
                 if event.key in (pygame.K_m, pygame.K_TAB):
                     self.map_on = True
                 if event.key == pygame.K_SPACE and self.game_over:
-                    # self.game_over = False
-                    # self.new_level = True
-                    # self.floor = 1
-                    # self.coins = 0
-                    # self.kills = 0
-                    RoboIsaac()
+                    self.restart_game()
                 if event.key == pygame.K_ESCAPE:
-                    if self.game_over: exit()
+                    if self.game_over: self.running = False
                     elif self.pause: self.pause = False
                     else: self.pause = True
                 if event.key == pygame.K_p:
@@ -114,7 +114,7 @@ class RoboIsaac:
                     self.map_on = False
 
             if event.type == pygame.QUIT:
-                exit()
+                self.running = False
 
     def draw_window(self):                       # when and what to draw on the screen
         self.update_game()
@@ -436,3 +436,15 @@ class RoboIsaac:
         if self.pause:
             text = self.game_font.render(f"PAUSE", True, (225,225,225))
             self.window.blit(text, (333, 333))
+
+    def restart_game(self):
+        self.floor = 1
+        self.coins = 0
+        self.kills = 0
+        self.game_over = False
+        self.pause = False
+        self.new_level = True
+
+        self.robot = Robot(BORDERS)
+        self.dropped_coins = []
+        self.enemies = []
