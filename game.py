@@ -10,13 +10,13 @@ from entities.coin import Coin
 from entities.enemy import Enemy
 from entities.robot import Robot
 from systems.level_generator import LevelGenerator
+from systems.ui import UISystem
 
 
 # I found out pygame has build-in collision detection after a big part of the game was already done...
 # so some parst are kind of weird improvisation
 class RoboIsaac:
     def __init__(self) -> None:
-        self.running = False
         pygame.init()
 
         self.floor = 1              # current game level(stage) number
@@ -37,24 +37,15 @@ class RoboIsaac:
         self.game_font = pygame.font.SysFont("Arial", 24)
         self.clock = pygame.time.Clock()
         pygame.display.set_caption("Robo-Isaac Game")
+        self.ui = UISystem()
 
         # helper variables
+        self.running = False
         self.map_on = False        # displaying the mini-map
         self.game_over = False     # displaying game-over screen
         self.pause = False         # displaying pause screen
 
         self.run()
-
-    def start_level(self):
-        gen = LevelGenerator(self.floor)
-        self.level = gen.generate()
-        self.current_room = self.level.start_room
-
-        # reset per-level state
-        self.robot.active_tears = []    # clear all tears
-        self.dropped_coins = []         # clear coins
-        self.enemies = []               # clear enemies
-        self.new_level = False          # new_level = False
 
     def run(self):
         self.running = True
@@ -67,6 +58,17 @@ class RoboIsaac:
 
         pygame.quit()
         sys.exit()
+
+    def start_level(self):
+        gen = LevelGenerator(self.floor)
+        self.level = gen.generate()
+        self.current_room = self.level.start_room
+
+        # reset per-level state
+        self.robot.active_tears = []    # clear all tears
+        self.dropped_coins = []         # clear coins
+        self.enemies = []               # clear enemies
+        self.new_level = False          # new_level = False
 
 
 
@@ -120,7 +122,7 @@ class RoboIsaac:
         self.update_game()
 
         self.window.fill((150, 150, 150))
-        self.draw_frame()
+        self.ui.draw_frame(self)
         if self.game_over:
             self.draw_game_over()
         elif self.pause:
@@ -138,49 +140,7 @@ class RoboIsaac:
 
         pygame.display.flip()
 
-    def draw_frame(self):  # it could've been done much easier, but now it is too late to redo everything =/
-        top, left, right, bottom = BORDERS
-        frame_color = (50, 50, 50)
-        if self.level.flag(self.current_room,1):
-            border_color = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
-        else: border_color = self.level.rgb(self.current_room)
-        text_color = (220, 220, 220)
 
-        pygame.draw.rect(self.window, frame_color, (0, 0, SCREEN_WIDTH, top)) # top frame
-        pygame.draw.line(self.window, border_color, (left, top), (SCREEN_WIDTH-right, top), width=5) # top-border line
-        pygame.draw.rect(self.window, frame_color, (0, 0, left, SCREEN_HEIGHT)) # left frame
-        pygame.draw.line(self.window, border_color, (left, top), (left, SCREEN_HEIGHT-bottom), width=5) # left-border line
-        pygame.draw.rect(self.window, frame_color, (SCREEN_WIDTH-right, 0, right, SCREEN_HEIGHT)) # right frame
-        pygame.draw.line(self.window, border_color, (SCREEN_WIDTH-right, top), (SCREEN_WIDTH-right,SCREEN_HEIGHT-bottom), width=5) # right-border line
-        pygame.draw.rect(self.window, frame_color, (0, SCREEN_HEIGHT-bottom, SCREEN_WIDTH, bottom)) # bottom frame
-        pygame.draw.line(self.window, border_color, (SCREEN_WIDTH-right, SCREEN_HEIGHT-bottom), (left, SCREEN_HEIGHT-bottom), width=5) # bottom-border line
-
-        current_level = self.game_font.render(f"Current Level: {self.floor}{" "*90}MOOC   <3", True, text_color)
-        self.window.blit(current_level, (left+left, (top-24)/2)) # draw current level counter
-
-        for i in range(1,self.robot.health_points + 1): # draw "extra life" indicators on the left
-            self.window.blit(self.robot.image, ((left - self.robot.image.get_width())/2-5, top*i + i*25))
-
-        stats = self.game_font.render(f"Robot Stats: ", True, text_color)
-        self.window.blit(stats, (SCREEN_WIDTH-right+right/10, top+40)) # draw stats header
-        speed = self.game_font.render(f"Speed: {self.robot.speed}", True, (200,200,50))
-        self.window.blit(speed, (SCREEN_WIDTH-right+right/5, top+80)) # draw speed stat
-        damage = self.game_font.render(f"Dmg: {self.robot.total_damage}", True, (200,00,00))
-        self.window.blit(damage, (SCREEN_WIDTH-right+right/5, top+120)) # draw damage stat
-        tears = self.game_font.render(f"Tears: {self.robot.tears}", True, (25,25,255))
-        self.window.blit(tears, (SCREEN_WIDTH-right+right/5, top+160)) # draw tears stat (max tears on screen)
-        tears_speed = self.game_font.render(f"Velocity: {self.robot.tear_speed}", True, (50,200,50))
-        self.window.blit(tears_speed, (SCREEN_WIDTH-right+right/5, top+200)) # draw tears velocity stat
-
-        stats = self.game_font.render(f"Total Score: ", True, text_color)
-        self.window.blit(stats, (SCREEN_WIDTH-right+right/10, SCREEN_HEIGHT/2 + 100)) # draw score header
-        kills = self.game_font.render(f"Kills: {self.kills}", True, text_color)
-        self.window.blit(kills, (SCREEN_WIDTH-right+right/5, SCREEN_HEIGHT/2 + 140)) # draw kills score
-        coins = self.game_font.render(f"Coins: {self.coins}", True, text_color)
-        self.window.blit(coins, (SCREEN_WIDTH-right+right/5, SCREEN_HEIGHT/2 + 180)) # draw coins score
-
-        help_text = self.game_font.render(f"Move:  WASD  |  Shoot:  Arrows  |  Pause:  P or Esc  |  Map:  M or Tab", True, text_color)
-        self.window.blit(help_text, (left + left, SCREEN_HEIGHT - bottom * 0.7)) # draw help
 
     def update_game(self):
         self.update_room_transition()
