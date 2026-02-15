@@ -119,7 +119,6 @@ class RoboIsaac:
                 self.running = False
 
     def render(self):
-        self.update_game()
 
         self.window.fill((150, 150, 150))
         self.ui.draw_frame(self)
@@ -130,12 +129,13 @@ class RoboIsaac:
         elif self.map_on:
             self.ui.draw_map(self)
         else:
+            self.update_game()
             self.robot.move_robot()
             self.window.blit(self.robot.image, (self.robot.x, self.robot.y)) # draw robot
             for enemy in self.enemies:
                 enemy.move()
             self.draw_room()
-            self.draw_tears()
+            self.process_tears()
             self.ui.draw_coins(self)
             self.draw_enemies()
 
@@ -228,7 +228,7 @@ class RoboIsaac:
 
         else: self.draw_doors() # !- only if cleared
 
-    def draw_tears(self):
+    def process_tears(self):
         for tear in self.robot.active_tears:
             if not tear.is_dead:     # any active tears
                 tear.move_tear()     # move
