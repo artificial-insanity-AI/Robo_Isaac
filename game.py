@@ -124,9 +124,9 @@ class RoboIsaac:
         self.window.fill((150, 150, 150))
         self.ui.draw_frame(self)
         if self.game_over:
-            self.draw_game_over()
+            self.ui.draw_game_over(self)
         elif self.pause:
-            self.draw_pause_screen()
+            self.ui.draw_pause(self)
         else:
             self.display_map()
             self.robot.move_robot()
@@ -380,22 +380,6 @@ class RoboIsaac:
                     if (y,x) == self.current_room:                                  # mark current room
                         small = pygame.transform.scale(self.robot.image, (k/2, k))  # with small robot icon
                         self.window.blit(small, (150+x*k+0.2*k, 150+y*k, k, k))
-
-    def draw_game_over(self):
-        if self.game_over:
-            top, left, right, bottom = BORDERS
-            pygame.draw.rect(self.window,(15,0,0),(top,left,SCREEN_WIDTH-left-right,SCREEN_HEIGHT-top-bottom),width=1000)
-            text = self.game_font.render(f"GAME OVER", True, (222,222,222))
-            text2 = self.game_font.render(f"Press Space to start over", True, (222,222,222))
-            text3 = self.game_font.render(f"Press ESC to quit", True, (222,222,222))
-            self.window.blit(text, (333, 333))
-            self.window.blit(text2, (333, 366))
-            self.window.blit(text3, (333, 399))
-
-    def draw_pause_screen(self):
-        if self.pause:
-            text = self.game_font.render(f"PAUSE", True, (225,225,225))
-            self.window.blit(text, (333, 333))
 
     def restart_game(self):
         self.floor = 1

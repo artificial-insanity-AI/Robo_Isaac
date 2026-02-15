@@ -51,8 +51,18 @@ class UISystem:
         game.window.blit(help_text, (left + left, SCREEN_HEIGHT - bottom * 0.7)) # draw help
 
     def draw_pause(self, game):
-        ...
+        text = game.game_font.render(f"PAUSE", True, (225,225,225))
+        game.window.blit(text, (333, 333))
+
     def draw_game_over(self, game):
-        ...
+        top, left, right, bottom = BORDERS
+        pygame.draw.rect(game.window,(15,0,0),(top,left,SCREEN_WIDTH-left-right,SCREEN_HEIGHT-top-bottom),width=1000)
+        text = game.game_font.render(f"GAME OVER", True, (222,222,222))
+        text2 = game.game_font.render(f"Press Space to start over", True, (222,222,222))
+        text3 = game.game_font.render(f"Press ESC to quit", True, (222,222,222))
+        game.window.blit(text, (333, 333))
+        game.window.blit(text2, (333, 366))
+        game.window.blit(text3, (333, 399))
+
     def draw_map(self, game):
         ...
