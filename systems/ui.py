@@ -2,7 +2,7 @@ import random
 
 import pygame
 
-from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class UISystem:
 
