@@ -206,8 +206,10 @@ class RoboIsaac:
 
         ### what to do in the room ###
         if not self.level.flag(self.current_room, 0):       # uncleared room?
+
             if room_color == (0, 255, 1):                   # green room?
                 self.draw_upgrade((450, 375))   # spawn upgrade, approx middle if the room
+
             elif room_color == (250, 255, 1):               # shop room?
                 self.draw_upgrade((350, 375))               # draw upgrade  (free)
                 self.draw_extra_life((550, 365))            # draw extra life (cost coins)
