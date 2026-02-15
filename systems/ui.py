@@ -84,3 +84,8 @@ class UISystem:
                 if (y,x) == game.current_room:                                  # mark current room
                     small = pygame.transform.scale(game.robot.image, (k/2, k))  # with small robot icon
                     game.window.blit(small, (150+x*k+0.2*k, 150+y*k, k, k))
+
+    def draw_coins(self, game):
+        for coin in game.dropped_coins:
+            if not coin.is_dead:
+                game.window.blit(coin.image, (coin.x, coin.y))

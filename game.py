@@ -53,7 +53,7 @@ class RoboIsaac:
             if self.new_level:
                 self.start_level()
             self.check_events()
-            self.draw_window()
+            self.render()
             self.clock.tick(FPS)
 
         pygame.quit()
@@ -118,7 +118,7 @@ class RoboIsaac:
             if event.type == pygame.QUIT:
                 self.running = False
 
-    def draw_window(self):                       # when and what to draw on the screen
+    def render(self):
         self.update_game()
 
         self.window.fill((150, 150, 150))
@@ -136,7 +136,7 @@ class RoboIsaac:
                 enemy.move()
             self.draw_room()
             self.draw_tears()
-            self.draw_coins()
+            self.ui.draw_coins(self)
             self.draw_enemies()
 
         pygame.display.flip()
@@ -146,6 +146,7 @@ class RoboIsaac:
     def update_game(self):
         self.update_room_transition()
         self.update_room_logic()
+        self.update_coin_pickups()
 
     def update_room_transition(self):
         if self.robot.door_collision is None:           # not near the door
@@ -305,15 +306,11 @@ class RoboIsaac:
                 self.level.set_flag(self.current_room,0)    # and set "cleared" flag for the room
                 self.coins -= 20
 
-    def draw_coins(self):
-        # if self.dropped_coins:
+    def update_coin_pickups(self):
         for coin in self.dropped_coins:
-            if not coin.is_dead:                                     # if not picked up yet
-                self.window.blit(coin.image, (coin.x, coin.y))       # draw it on the map
-                pos = pygame.Rect(coin.image.get_rect(topleft = (coin.x, coin.y)))
-                if pos.colliderect(self.robot.image.get_rect(topleft = (self.robot.x, self.robot.y))):
-                    coin.is_dead = True                          # collision detected: mark as dead
-                    self.coins += 1                              # and increase coins counter
+            if not coin.is_dead and coin.rect().colliderect(self.robot.rect()):
+                coin.is_dead = True
+                self.coins += 1
 
     def draw_enemies(self):
         top, left, right, bottom = BORDERS

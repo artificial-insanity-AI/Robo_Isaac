@@ -11,3 +11,6 @@ class Coin:
         self.x = random.randint(left_border, SCREEN_WIDTH-right_border - self.image.get_width())
         self.y = random.randint(top_border, SCREEN_HEIGHT-bottom_border - self.image.get_height())
         self.is_dead = False
+
+    def rect(self):
+        return self.image.get_rect(topleft=(self.x, self.y))

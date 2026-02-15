@@ -29,6 +29,9 @@ class Robot:
 
         self.active_tears = [] # max can be up to self.tears stat but no more than 10
 
+    def rect(self):
+        return self.image.get_rect(topleft=(self.x, self.y))
+
     def move_robot(self):
         self.door_collision = None
         speed = min(self.speed, 7)  # speeed limit is 7
