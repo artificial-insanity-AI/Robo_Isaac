@@ -65,4 +65,22 @@ class UISystem:
         game.window.blit(text3, (333, 399))
 
     def draw_map(self, game):
-        ...
+        k = 45      # size of the squares on the mini-map
+        header = game.game_font.render(f"Map: ", True, (40, 40, 40)) # mini-map header
+        game.window.blit(header, (150, 120))
+
+        pygame.draw.rect(game.window, (40, 40, 40), (150, 150, 9*k, 7*k)) # mini-map background
+        for x in range(9):                            # traverse game.map
+            for y in range(7):
+                if game.level.flag((y,x), 2):               # check room visible flag
+                    if game.level.flag((y,x), 0):           # check cleared flag
+                        color = game.level.rgb((y,x))       # use it's real color
+                    else:
+                        c = game.level.rgb((y,x))       # use darker shades:
+                        color = max(c[0]-100, 0),max(c[1]-100, 0),max(c[2]-100, 0)
+                else: color = (0,0,0)             # else the room is black on the map until found
+                pygame.draw.rect(game.window, color, (150+x*k, 150+y*k, k, k)) # fill current square with color
+                pygame.draw.rect(game.window, (111,111,111), (150+x*k, 150+y*k, k, k), width=1) # thin border around each square
+                if (y,x) == game.current_room:                                  # mark current room
+                    small = pygame.transform.scale(game.robot.image, (k/2, k))  # with small robot icon
+                    game.window.blit(small, (150+x*k+0.2*k, 150+y*k, k, k))

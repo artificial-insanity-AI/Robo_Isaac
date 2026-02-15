@@ -127,8 +127,9 @@ class RoboIsaac:
             self.ui.draw_game_over(self)
         elif self.pause:
             self.ui.draw_pause(self)
+        elif self.map_on:
+            self.ui.draw_map(self)
         else:
-            self.display_map()
             self.robot.move_robot()
             self.window.blit(self.robot.image, (self.robot.x, self.robot.y)) # draw robot
             for enemy in self.enemies:
@@ -358,28 +359,6 @@ class RoboIsaac:
                     self.level.set_flag(self.current_room, 0)   # if all dead => set "cleared" room flag
                     self.enemies = []                     ## reset the enemies list
 
-
-    def display_map(self):
-        if self.map_on:
-            k = 45      # size of the squares on the mini-map
-            header = self.game_font.render(f"Map: ", True, (40, 40, 40)) # mini-map header
-            self.window.blit(header, (150, 120))
-
-            pygame.draw.rect(self.window, (40, 40, 40), (150, 150, 9*k, 7*k)) # mini-map background
-            for x in range(9):                            # traverse self.map
-                for y in range(7):
-                    if self.level.flag((y,x), 2):               # check room visible flag
-                        if self.level.flag((y,x), 0):           # check cleared flag
-                            color = self.level.rgb((y,x))       # use it's real color
-                        else:
-                            c = self.level.rgb((y,x))       # use darker shades:
-                            color = max(c[0]-100, 0),max(c[1]-100, 0),max(c[2]-100, 0)
-                    else: color = (0,0,0)             # else the room is black on the map until found
-                    pygame.draw.rect(self.window, color, (150+x*k, 150+y*k, k, k)) # fill current square with color
-                    pygame.draw.rect(self.window, (111,111,111), (150+x*k, 150+y*k, k, k), width=1) # thin border around each square
-                    if (y,x) == self.current_room:                                  # mark current room
-                        small = pygame.transform.scale(self.robot.image, (k/2, k))  # with small robot icon
-                        self.window.blit(small, (150+x*k+0.2*k, 150+y*k, k, k))
 
     def restart_game(self):
         self.floor = 1
