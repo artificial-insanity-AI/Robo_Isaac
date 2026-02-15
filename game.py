@@ -130,10 +130,8 @@ class RoboIsaac:
             self.ui.draw_map(self)
         else:
             self.update_game()
-            self.robot.move_robot()
+
             self.window.blit(self.robot.image, (self.robot.x, self.robot.y)) # draw robot
-            for enemy in self.enemies:
-                enemy.move()
             self.draw_room()
             self.process_tears()
             self.ui.draw_coins(self)
@@ -147,6 +145,9 @@ class RoboIsaac:
         self.update_room_transition()
         self.update_room_logic()
         self.update_coin_pickups()
+        self.robot.move_robot()
+        for enemy in self.enemies:
+            enemy.move()
 
     def update_room_transition(self):
         if self.robot.door_collision is None:           # not near the door
