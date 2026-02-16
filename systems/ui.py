@@ -89,3 +89,47 @@ class UISystem:
         for coin in game.dropped_coins:
             if not coin.is_dead:
                 game.window.blit(coin.image, (coin.x, coin.y))
+
+    def draw_shop_text(self, game):
+        stats = game.game_font.render(f"CHOOSE ONE", True, (0, 0, 0))
+        game.window.blit(stats, (400, 320))
+
+        stats = game.game_font.render(f"free                                 $20", True, (0, 0, 0))
+        game.window.blit(stats, (350, 450))
+
+    def draw_boss_hp_bar(self, game):
+        hp = game.enemies[0].hp                          ## get current hp
+        one_bar = int(game.enemies[0].starting_hp/10)    ## calculate based on initial boss hp
+        hp_bar = f"BOSS HP: [{"="*(hp//one_bar):_<10}]"
+        text = game.game_font.render(hp_bar, True, (255, 0, 0))
+        game.window.blit(text, (400, (75-24)/2))
+
+
+# TODO move logic out of two bottom ones back into game.py
+    def draw_upgrade(self, position:tuple, game):
+        upgrd = game.level.upgrades[game.level.rgb(game.current_room)]
+        x,y = position
+        randcolor=(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+        randwidth = random.randint(2,5)
+        pos = pygame.Rect((x, y, 40, 40))
+        pygame.draw.rect(game.window, upgrd.color, pos)       # color = the type of the upgrade
+        pygame.draw.rect(game.window, randcolor, pos, width=randwidth) # flashy border
+        if pos.colliderect(game.robot.image.get_rect(topleft = (game.robot.x, game.robot.y))):
+            game.robot.upgrade(upgrd.color)       # upgrade robot stat
+            game.level.set_flag(game.current_room,0)    # and set "cleared" flag for the room
+
+    def draw_extra_life(self, position:tuple, game):
+        image = game.robot.image
+        image = pygame.transform.scale(image, (image.get_width()*0.7, image.get_height()*0.7))
+        x,y = position
+        game.window.blit(image, (x, y))
+        pos = pygame.Rect((x, y, image.get_width(), image.get_height()))
+        if pos.colliderect(game.robot.image.get_rect(topleft = (game.robot.x, game.robot.y))):
+            if game.robot.health_points > 5 or game.coins < 20:
+                color = random.choice([(255,0,0),(155,0,0),(55,0,0)])
+                randwidth = random.randint(2,25)
+                pygame.draw.rect(game.window, color, pos, width=randwidth) # flashy border
+            else:
+                game.robot.health_points += 1         # add one life
+                game.level.set_flag(game.current_room,0)    # and set "cleared" flag for the room
+                game.coins -= 20

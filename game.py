@@ -132,7 +132,6 @@ class RoboIsaac:
             self.update_game()
 
             self.window.blit(self.robot.image, (self.robot.x, self.robot.y)) # draw robot
-            self.draw_room()
             self.process_tears()
             self.ui.draw_coins(self)
             self.draw_enemies()
@@ -173,63 +172,35 @@ class RoboIsaac:
         self.dropped_coins = []
 
     def update_room_logic(self):
-
-        if self.level.flag(self.current_room, 0):   # uncleared room?
+        if self.level.flag(self.current_room, 0):       # cleared room?
+            self.draw_doors()                           #TODO split draw doors
             return
 
         room_color = self.level.rgb(self.current_room)
 
-        if room_color == (0, 255, 1):   # UPGRADE ROOM
-            pass
+        if room_color == (0, 255, 1):           # green room
+            self.ui.draw_upgrade((450, 375), self)
 
-        elif room_color == (250, 255, 1):   # SHOP ROOM
-            pass
+        elif room_color == (250, 255, 1):       # shop room
+            self.ui.draw_upgrade((350, 375), self)
+            self.ui.draw_extra_life((550, 365), self)
+            self.ui.draw_shop_text(self)
 
-        elif room_color == (0, 1, 61):      # SECRET ROOM
+        elif room_color == (250, 0, 1):         # BOSS room
+            if self.enemies:
+                self.ui.draw_boss_hp_bar(self)
+            else:
+                self.enemies.append(Boss(self.floor, BORDERS))
+
+        elif room_color == (0, 1, 61):          # SECRET ROOM
             for _ in range(random.randint(5, 9)):
                 self.dropped_coins.append(Coin(BORDERS))    # spawn some coins
             self.level.set_flag(self.current_room, 0)       # set "cleared" flag
-
-        elif room_color == (250, 0, 1):     # BOSS ROOM
-            if not self.enemies:            # add boss enemy
-                self.enemies.append(Boss(self.floor, BORDERS))
 
         elif room_color == (0, 222, 221):   # NORMAL ROOM
             if not self.enemies:            # spawn some enemies
                 for _ in range(random.randint(1, 3) + self.floor // 2):
                     self.enemies.append(Enemy(self.floor, BORDERS))
-
-
-    def draw_room(self):
-
-        room_color = self.level.rgb(self.current_room)
-
-        ### what to do in the room ###
-        if not self.level.flag(self.current_room, 0):       # uncleared room?
-
-            if room_color == (0, 255, 1):                   # green room?
-                self.draw_upgrade((450, 375))   # spawn upgrade, approx middle if the room
-
-            elif room_color == (250, 255, 1):               # shop room?
-                self.draw_upgrade((350, 375))               # draw upgrade  (free)
-                self.draw_extra_life((550, 365))            # draw extra life (cost coins)
-
-                stats = self.game_font.render(f"CHOOSE ONE", True, (0, 0, 0))
-                self.window.blit(stats, (400, 320))
-
-                stats = self.game_font.render(f"free                                 $20", True, (0, 0, 0))
-                self.window.blit(stats, (350, 450))
-
-            elif room_color == (250,0,1):       # boss room?
-                ### draw BOSS HP bar
-                if self.enemies:
-                    hp = self.enemies[0].hp                          ## get current hp
-                    one_bar = int(self.enemies[0].starting_hp/10)    ## calculate based on initial boss hp
-                    hp_bar = f"BOSS HP: [{"="*(hp//one_bar):_<10}]"
-                    text = self.game_font.render(hp_bar, True, (255, 0, 0))
-                    self.window.blit(text, (400, (75-24)/2))
-
-        else: self.draw_doors() # !- only if cleared
 
     def process_tears(self):
         for tear in self.robot.active_tears:
@@ -280,35 +251,6 @@ class RoboIsaac:
                 self.floor += 1                       # increase level count
                 self.new_level = True                 # set generate new level flag
 
-    def draw_upgrade(self, position:tuple):
-        upgrd = self.level.upgrades[self.level.rgb(self.current_room)]
-        # if upgrd.is_dead: return
-        x,y = position
-        randcolor=(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-        randwidth = random.randint(2,5)
-        pos = pygame.Rect((x, y, 40, 40))
-        pygame.draw.rect(self.window, upgrd.color, pos)       # color = the type of the upgrade
-        pygame.draw.rect(self.window, randcolor, pos, width=randwidth) # flashy border
-        if pos.colliderect(self.robot.image.get_rect(topleft = (self.robot.x, self.robot.y))):
-            self.robot.upgrade(upgrd.color)       # upgrade robot stat
-            self.level.set_flag(self.current_room,0)    # and set "cleared" flag for the room
-
-    def draw_extra_life(self, position:tuple):
-        image = self.robot.image
-        image = pygame.transform.scale(image, (image.get_width()*0.7, image.get_height()*0.7))
-        x,y = position
-        self.window.blit(image, (x, y))
-        pos = pygame.Rect((x, y, image.get_width(), image.get_height()))
-        if pos.colliderect(self.robot.image.get_rect(topleft = (self.robot.x, self.robot.y))):
-            if self.robot.health_points > 5 or self.coins < 20:
-                color = random.choice([(255,0,0),(155,0,0),(55,0,0)])
-                randwidth = random.randint(2,25)
-                pygame.draw.rect(self.window, color, pos, width=randwidth) # flashy border
-            else:
-                self.robot.health_points += 1         # add one life
-                self.level.set_flag(self.current_room,0)    # and set "cleared" flag for the room
-                self.coins -= 20
-
     def update_coin_pickups(self):
         for coin in self.dropped_coins:
             if not coin.is_dead and coin.rect().colliderect(self.robot.rect()):
@@ -352,7 +294,7 @@ class RoboIsaac:
                                 pygame.draw.circle(self.window, tear.color, (tear.x, tear.y), tear.size, tear.size)
             if len([i for i in self.enemies if i.is_dead == True]) == len(self.enemies): # all enemies killed!
                 if self.level.rgb(self.current_room) == (250,0,1):               # boss room:
-                    self.draw_upgrade((self.enemies[0].x, self.enemies[0].y))  ## spawn item
+                    self.ui.draw_upgrade((self.enemies[0].x, self.enemies[0].y), self)  ## spawn item
                 elif not self.level.rgb(self.current_room) == (251,0,1) and not self.current_room == (3,4):                                                      # non-boss room:
                     for i in range(random.randint(0,3)):                     ## spawn some coins
                         self.dropped_coins.append(Coin(BORDERS))
