@@ -106,17 +106,11 @@ class UISystem:
 
 
 # TODO move logic out of two bottom ones back into game.py
-    def draw_upgrade(self, position:tuple, game):
-        upgrd = game.level.upgrades[game.level.rgb(game.current_room)]
-        x,y = position
+    def draw_upgrade(self, position, color, game):
         randcolor=(random.randint(0,255),random.randint(0,255),random.randint(0,255))
         randwidth = random.randint(2,5)
-        pos = pygame.Rect((x, y, 40, 40))
-        pygame.draw.rect(game.window, upgrd.color, pos)       # color = the type of the upgrade
-        pygame.draw.rect(game.window, randcolor, pos, width=randwidth) # flashy border
-        if pos.colliderect(game.robot.image.get_rect(topleft = (game.robot.x, game.robot.y))):
-            game.robot.upgrade(upgrd.color)       # upgrade robot stat
-            game.level.set_flag(game.current_room,0)    # and set "cleared" flag for the room
+        pygame.draw.rect(game.window, color, position)       # color = the type of the upgrade
+        pygame.draw.rect(game.window, randcolor, position, width=randwidth) # flashy border
 
     def draw_extra_life(self, position:tuple, game):
         image = game.robot.image

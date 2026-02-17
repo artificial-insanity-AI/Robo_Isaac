@@ -179,10 +179,17 @@ class RoboIsaac:
         room_color = self.level.rgb(self.current_room)
 
         if room_color == (0, 255, 1):           # green room
-            self.ui.draw_upgrade((450, 375), self)
+            position = pygame.Rect(450, 375, 40, 40)
+            color = self.level.upgrades[(0, 255, 1)].color
+            self.ui.draw_upgrade(position, color, self)
+            self.upgrade_collision(position, color)
 
         elif room_color == (250, 255, 1):       # shop room
-            self.ui.draw_upgrade((350, 375), self)
+            position = pygame.Rect(359, 375, 40, 40)
+            color = self.level.upgrades[(250, 255, 1)].color
+            self.ui.draw_upgrade(position, color, self)
+            self.upgrade_collision(position, color)
+
             self.ui.draw_extra_life((550, 365), self)
             self.ui.draw_shop_text(self)
 
@@ -201,6 +208,11 @@ class RoboIsaac:
             if not self.enemies:            # spawn some enemies
                 for _ in range(random.randint(1, 3) + self.floor // 2):
                     self.enemies.append(Enemy(self.floor, BORDERS))
+
+    def upgrade_collision (self, position, color):
+        if position.colliderect(self.robot.rect()):
+            self.robot.upgrade(color)       # upgrade robot stat
+            self.level.set_flag(self.current_room,0)    # and set "cleared" flag for the room
 
     def process_tears(self):
         for tear in self.robot.active_tears:
@@ -292,9 +304,14 @@ class RoboIsaac:
                                     self.kills += 1
                                 tear.tear_collision()                    # call method for tear explosion
                                 pygame.draw.circle(self.window, tear.color, (tear.x, tear.y), tear.size, tear.size)
+
             if len([i for i in self.enemies if i.is_dead == True]) == len(self.enemies): # all enemies killed!
                 if self.level.rgb(self.current_room) == (250,0,1):               # boss room:
-                    self.ui.draw_upgrade((self.enemies[0].x, self.enemies[0].y), self)  ## spawn item
+                    position = pygame.Rect(self.enemies[0].x, self.enemies[0].y, 40, 40)
+                    color = self.level.upgrades[(250,0,1)].color
+                    self.ui.draw_upgrade(position, color, self)  ## spawn item
+                    self.upgrade_collision(position, color)
+
                 elif not self.level.rgb(self.current_room) == (251,0,1) and not self.current_room == (3,4):                                                      # non-boss room:
                     for i in range(random.randint(0,3)):                     ## spawn some coins
                         self.dropped_coins.append(Coin(BORDERS))
