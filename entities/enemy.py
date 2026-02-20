@@ -19,6 +19,9 @@ class Enemy:
         self.direction = random.randint(1,4)
         self.is_dead = False
 
+    def rect(self):
+        return self.image.get_rect(topleft=(self.x, self.y))
+
     def move(self):
         self.change_direction()
         if self.direction == 1:

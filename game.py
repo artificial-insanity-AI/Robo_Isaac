@@ -134,19 +134,16 @@ class RoboIsaac:
             self.window.blit(self.robot.image, (self.robot.x, self.robot.y)) # draw robot
             self.process_tears()
             self.ui.draw_coins(self)
-            self.draw_enemies()
+            self.ui.draw_enemies(self)
 
         pygame.display.flip()
-
-
 
     def update_game(self):
         self.update_room_transition()
         self.update_room_logic()
         self.update_coin_pickups()
         self.robot.move_robot()
-        for enemy in self.enemies:
-            enemy.move()
+        self.update_enemies()
 
     def update_room_transition(self):
         if self.robot.door_collision is None:           # not near the door
@@ -230,7 +227,7 @@ class RoboIsaac:
         self.level.set_flag(self.current_room, 0)   # and set "cleared" flag for the room
         return "purchased"
 
-
+        #TODO split drawing tears
     def process_tears(self):
         for tear in self.robot.active_tears:
             if not tear.is_dead:     # any active tears
@@ -240,7 +237,7 @@ class RoboIsaac:
     def draw_doors(self):
         top, left, right, bottom = BORDERS
         door = DOOR_IMG
-        neighbours = [i for i in self.level.neighbors(self.current_room) if not self.level.in_bounds(i)]
+        neighbours = [i for i in self.level.neighbors(self.current_room) if not self.level.out_bounds(i)]
         position = {"top":((SCREEN_WIDTH - left - right) / 2 + left - door.get_width() / 2, top / 2),
                     "bottom":((SCREEN_WIDTH - left - right) / 2 + left - door.get_width() / 2, SCREEN_HEIGHT - bottom * 1.5),
                     "left":(left*0.7,(SCREEN_HEIGHT-top-bottom)/2+top-door.get_height()/2),
@@ -250,6 +247,7 @@ class RoboIsaac:
             if room[1] == self.current_room[1]:
                 return "bottom" if room[0] > self.current_room[0] else "top"
             else: return "right" if room[1] > self.current_room[1] else "left"
+
         def secret_door_hit(room):      # check if hidden door was hit
             secret_pos = find_position(room)
             for tear in [i for i in self.robot.active_tears if i.is_dead == True]:
@@ -286,55 +284,64 @@ class RoboIsaac:
                 coin.is_dead = True
                 self.coins += 1
 
-    def draw_enemies(self):
-        top, left, right, bottom = BORDERS
-        if self.enemies:
-            for enemy in self.enemies:
-                if not enemy.is_dead:                                    # if enemy alive
-                    self.window.blit(enemy.image, (enemy.x, enemy.y))    # draw it
-                    pos = pygame.Rect(enemy.image.get_rect(topleft = (enemy.x, enemy.y)))
-                    pos_r = self.robot.image.get_rect(topleft = (self.robot.x, self.robot.y))
-                    if pos.colliderect(pos_r):                           # if robot collision
-                        self.robot.health_points -= 1                    # spend one extra life
-                        pygame.draw.rect(self.window, (255,0,0), pos, width=50)    #  highlight enemy
-                        pygame.display.flip()
-                        pygame.time.wait(1000)
-                        pygame.draw.rect(self.window, (155,0,0), pos_r, width=100) #  red robot
-                        pygame.display.flip()
-                        pygame.time.wait(1000)
-                        pygame.draw.rect(self.window,(25,0,0),(top,left,SCREEN_WIDTH-left-right,SCREEN_HEIGHT-top-bottom),width=1000)
-                        pygame.display.flip()                                      #  red screen
-                        if self.robot.health_points >= 0:          # if was not last life
-                            self.enemies = []
-                            self.dropped_coins = []
-                            self.robot.active_tears = []
-                            self.current_room = 3,4                ## respawn in the starting room
-                            pygame.time.wait(500)
-                        else:
-                            self.game_over = True                  ## else - game over!
-                    for tear in self.robot.active_tears:
-                        if not tear.is_dead:
-                            if pos.collidepoint(tear.x, tear.y):         # detected tear collision
-                                enemy.hp -= self.robot.total_damage      # reduce enemy hp
-                                if enemy.hp <= 0:                        # killed?
-                                    enemy.is_dead = True
-                                    self.kills += 1
-                                tear.tear_collision()                    # call method for tear explosion
-                                pygame.draw.circle(self.window, tear.color, (tear.x, tear.y), tear.size, tear.size)
+    def update_enemies(self):
+        for enemy in self.enemies:
+            if enemy.is_dead:
+                continue
 
-            if len([i for i in self.enemies if i.is_dead == True]) == len(self.enemies): # all enemies killed!
-                if self.level.rgb(self.current_room) == (250,0,1):               # boss room:
-                    position = pygame.Rect(self.enemies[0].x, self.enemies[0].y, 40, 40)
-                    color = self.level.upgrades[(250,0,1)].color
-                    self.ui.draw_upgrade(position, color, self)  ## spawn item
-                    self.upgrade_collision(position, color)
+            enemy.move()
+            self.robot_enemy_collision(enemy)
+            self.tear_enemy_collision(enemy)
 
-                elif not self.level.rgb(self.current_room) == (251,0,1) and not self.current_room == (3,4):                                                      # non-boss room:
-                    for i in range(random.randint(0,3)):                     ## spawn some coins
-                        self.dropped_coins.append(Coin(BORDERS))
-                    self.level.set_flag(self.current_room, 0)   # if all dead => set "cleared" room flag
-                    self.enemies = []                     ## reset the enemies list
+        self.check_room_cleared()
 
+    def robot_enemy_collision(self, enemy:Enemy):
+        if not enemy.rect().colliderect(self.robot.rect()):
+            return
+
+        self.robot.health_points -= 1
+        self.ui.draw_death_effect(self, enemy)
+
+        if self.robot.health_points >= 0:
+            self.enemies = []
+            self.dropped_coins = []
+            self.robot.active_tears = []
+            self.current_room = 3,4                ## respawn in the starting room
+            pygame.time.wait(500)
+        else:
+            self.game_over = True
+
+    #TODO split drawing tears explosion effect
+    def tear_enemy_collision(self, enemy):
+        for tear in self.robot.active_tears:
+            if not tear.is_dead:
+                if enemy.rect().collidepoint(tear.x, tear.y):  # detected tear collision
+                    enemy.hp -= self.robot.total_damage      # reduce enemy hp
+                    if enemy.hp <= 0:                        # killed?
+                        enemy.is_dead = True
+                        self.kills += 1
+                    tear.tear_collision()                    # call method for tear explosion
+                    pygame.draw.circle(self.window, tear.color, (tear.x, tear.y), tear.size, tear.size)
+
+    def check_room_cleared(self):
+        if not self.enemies:
+            return
+        if not any(not e.is_dead for e in self.enemies):    # all enemies killed!
+            self.handle_room_clear()
+
+    def handle_room_clear(self):
+        if self.level.rgb(self.current_room) == (250,0,1):               # boss room:
+
+            position = pygame.Rect(self.enemies[0].x, self.enemies[0].y, 40, 40)
+            color = self.level.upgrades[(250,0,1)].color
+            self.ui.draw_upgrade(position, color, self)  ## spawn item
+            self.upgrade_collision(position, color)
+
+        elif not self.level.rgb(self.current_room) == (251,0,1) and not self.current_room == (3,4):                                                      # non-boss room:
+            for i in range(random.randint(0,3)):                     ## spawn some coins
+                self.dropped_coins.append(Coin(BORDERS))
+            self.level.set_flag(self.current_room, 0)   # if all dead => set "cleared" room flag
+            self.enemies = []                     ## reset the enemies list
 
     def restart_game(self):
         self.floor = 1

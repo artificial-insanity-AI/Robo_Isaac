@@ -105,8 +105,6 @@ class UISystem:
         text = game.game_font.render(hp_bar, True, (255, 0, 0))
         game.window.blit(text, (400, (75-24)/2))
 
-
-# TODO move logic out of two bottom ones back into game.py
     def draw_upgrade(self, position, color, game):
         randcolor=(random.randint(0,255),random.randint(0,255),random.randint(0,255))
         randwidth = random.randint(2,5)
@@ -120,3 +118,21 @@ class UISystem:
             color = random.choice([(255,0,0),(155,0,0),(55,0,0)])
             randwidth = random.randint(2,25)
             pygame.draw.rect(game.window, color, pos, width=randwidth)
+
+    def draw_enemies(self, game):
+        for enemy in game.enemies:
+            if not enemy.is_dead:
+                game.window.blit(enemy.image, (enemy.x, enemy.y))
+
+    def draw_death_effect(self, game, enemy):
+        top, left, right, bottom = BORDERS
+        pos = enemy.rect()
+        pos_r = game.robot.rect()
+        pygame.draw.rect(game.window, (255,0,0), pos, width=50)    #  highlight enemy
+        pygame.display.flip()
+        pygame.time.wait(1000)
+        pygame.draw.rect(game.window, (155,0,0), pos_r, width=100) #  red robot
+        pygame.display.flip()
+        pygame.time.wait(1000)
+        pygame.draw.rect(game.window,(25,0,0),(top,left,SCREEN_WIDTH-left-right,SCREEN_HEIGHT-top-bottom),width=1000)
+        pygame.display.flip()                                      #  red screen

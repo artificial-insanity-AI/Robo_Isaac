@@ -45,7 +45,7 @@ class LevelGenerator:
                     for n in level.neighbors(room):
                         if len(rooms_created) == how_many_rooms: break # already have enough rooms
                         if n in rooms_created: continue  # already existing room
-                        if level.in_bounds(n):continue      # out of the map range
+                        if level.out_bounds(n):continue      # out of the map range
                         if how_many_n(n) >= 2: continue  # there are 2 adjacent to "n" rooms
                         if random.choice([True, False]): continue # 50% to give up
                         rooms_created.append(n)          # room added to the list
@@ -84,11 +84,11 @@ class LevelGenerator:
         candidates = [] # [(n,(x,y)),...] where n is how many non-boss neighbours
         for room in rooms_created:
             for n in level.neighbors(room):
-                if level.in_bounds(n): continue        # square is outside the map
+                if level.out_bounds(n): continue        # square is outside the map
                 if level.rgb(n) != (0,0,0): continue      # square is occupied
-                if (250,0,0) in [level.rgb(i) for i in level.neighbors(n) if not level.in_bounds(i)]:
+                if (250,0,0) in [level.rgb(i) for i in level.neighbors(n) if not level.out_bounds(i)]:
                     continue                             # the boss room is neighbour
-                rgb_in_range = [level.rgb(i) for i in level.neighbors(n) if not level.in_bounds(i)]
+                rgb_in_range = [level.rgb(i) for i in level.neighbors(n) if not level.out_bounds(i)]
                 r = len(rgb_in_range) - rgb_in_range.count((0,0,0)) # how many adjacent non-boss rooms
                 candidates.append((r, n)) # candidate found
 

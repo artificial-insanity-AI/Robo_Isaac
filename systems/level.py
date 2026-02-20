@@ -41,5 +41,5 @@ class Level:
         return [(room[0] + 1, room[1]), (room[0] - 1, room[1]),
                 (room[0], room[1] + 1), (room[0], room[1] - 1)]
 
-    def in_bounds(self, r:tuple)->bool:
+    def out_bounds(self, r:tuple)->bool:
         return r[0] > 6 or r[0] < 0 or r[1] > 8 or r[1] < 0
