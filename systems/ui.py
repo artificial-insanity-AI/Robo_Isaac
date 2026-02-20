@@ -2,6 +2,7 @@ import random
 
 import pygame
 
+from assets import EXTRA_LIFE_IMG
 from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class UISystem:
@@ -112,18 +113,10 @@ class UISystem:
         pygame.draw.rect(game.window, color, position)       # color = the type of the upgrade
         pygame.draw.rect(game.window, randcolor, position, width=randwidth) # flashy border
 
-    def draw_extra_life(self, position:tuple, game):
-        image = game.robot.image
-        image = pygame.transform.scale(image, (image.get_width()*0.7, image.get_height()*0.7))
-        x,y = position
-        game.window.blit(image, (x, y))
-        pos = pygame.Rect((x, y, image.get_width(), image.get_height()))
-        if pos.colliderect(game.robot.image.get_rect(topleft = (game.robot.x, game.robot.y))):
-            if game.robot.health_points > 5 or game.coins < 20:
-                color = random.choice([(255,0,0),(155,0,0),(55,0,0)])
-                randwidth = random.randint(2,25)
-                pygame.draw.rect(game.window, color, pos, width=randwidth) # flashy border
-            else:
-                game.robot.health_points += 1         # add one life
-                game.level.set_flag(game.current_room,0)    # and set "cleared" flag for the room
-                game.coins -= 20
+    def draw_extra_life(self, pos, game, state=None):
+        game.window.blit(EXTRA_LIFE_IMG, pos)
+
+        if state == "not_allowed":
+            color = random.choice([(255,0,0),(155,0,0),(55,0,0)])
+            randwidth = random.randint(2,25)
+            pygame.draw.rect(game.window, color, pos, width=randwidth)

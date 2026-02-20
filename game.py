@@ -3,7 +3,7 @@ import sys
 
 import pygame
 
-from assets import DOOR_IMG
+from assets import DOOR_IMG, EXTRA_LIFE_IMG
 from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from entities.boss import Boss
 from entities.coin import Coin
@@ -190,7 +190,10 @@ class RoboIsaac:
             self.ui.draw_upgrade(position, color, self)
             self.upgrade_collision(position, color)
 
-            self.ui.draw_extra_life((550, 365), self)
+            pos = pygame.Rect((550, 365, EXTRA_LIFE_IMG.get_width(), EXTRA_LIFE_IMG.get_height()))
+            state = self.extra_life_collision(pos)
+            self.ui.draw_extra_life(pos, self, state)
+
             self.ui.draw_shop_text(self)
 
         elif room_color == (250, 0, 1):         # BOSS room
@@ -213,6 +216,20 @@ class RoboIsaac:
         if position.colliderect(self.robot.rect()):
             self.robot.upgrade(color)       # upgrade robot stat
             self.level.set_flag(self.current_room,0)    # and set "cleared" flag for the room
+
+    def extra_life_collision(self, position):
+        if not position.colliderect(self.robot.rect()):
+            return None
+
+        if self.robot.health_points > 5 or self.coins < 20:
+            return "not_allowed"
+
+        # purchase successful
+        self.robot.health_points += 1
+        self.coins -= 20
+        self.level.set_flag(self.current_room, 0)   # and set "cleared" flag for the room
+        return "purchased"
+
 
     def process_tears(self):
         for tear in self.robot.active_tears:
