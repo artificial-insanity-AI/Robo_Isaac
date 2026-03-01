@@ -6,23 +6,17 @@ prerequisites:
 
 
 BUGS (those are only the latest ones out of many or current bugs)
-- [fixed?]      secret room sometimes can generate near the boss room
-  reason: typo
+- [fixed]      secret room sometimes can generate near the boss room
 - [fixed]       secret door spawned without being hit
-  reason: one of the "dead" tears from previous room(s) that was not overwritten yet
-  match the direction of the secret door in the current room
-  fix:    delete all tears instead of setting tear.is_dead=True on entering new room
-- [fixed ? ]    coins spawn after boss fight
+- [fixed]    coins spawn after boss fight
 - [fixed]       coins can spawn in starting room of a new lvl
-- [non issue?]  tear is drawn after robot respawn losing the extra life
-- [fix later?]  sometimes no items in the shop/item room
-- [won't fix]   sometimes no enemies in the room
-  |-> reason: doesn't happen too often, and it is ok if some rooms do not have enemies
-  [update] - likely first room after defeating a boss (on this or next floor, not counting start) - need to fix
+- [fixed]  tear is drawn after robot respawn losing the extra life
+- [fixed]  sometimes no items in the shop/item room
+- [fixed]   sometimes no enemies in the room
 
 POTENTIAL FUTURE IMPROVEMENTS
 
-- rewrite code to OOP and split into multiple files and in accordance with good practices
+- [mostly  done] rewrite code to OOP and split into multiple files and in accordance with good practices
 - prevent next-level door spawning right under the robot (teleport robot away or make the door inactive)
 - balance power-level of the enemies and the player at higher levels
 - add super enemies with flushy colors and various size

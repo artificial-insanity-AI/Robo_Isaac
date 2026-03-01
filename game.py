@@ -342,7 +342,7 @@ class RoboIsaac:
         if self.robot.health_points >= 0:
             self.enemies = []
             self.dropped_coins = []
-            self.robot.active_tears = []
+            self.robot.active_tears.clear()
             self.current_room = 3,4                ## respawn in the starting room
             pygame.time.wait(500)
         else:
