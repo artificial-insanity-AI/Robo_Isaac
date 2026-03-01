@@ -4,7 +4,7 @@ import sys
 import pygame
 
 from assets import DOOR_IMG, EXTRA_LIFE_IMG
-from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT, FPS, RIGHT_BORDER, LEFT_BORDER, BOTTOM_BORDER, TOP_BORDER
 from entities.boss import Boss
 from entities.coin import Coin
 from entities.enemy import Enemy
@@ -145,14 +145,13 @@ class RoboIsaac:
 
     def update_room_transition(self):
 
-        # Check if the robot collides with any visible door
         for door_rect, direction in self.get_visible_doors():
 
             if not door_rect.colliderect(self.robot.rect()):
                 continue
 
                 # Must be actively moving toward that door
-            if direction == "left" and not self.robot.move_left: #TODO think about reworking robot movement
+            if direction == "left" and not self.robot.move_left:
                 continue
             if direction == "right" and not self.robot.move_right:
                 continue
@@ -161,24 +160,26 @@ class RoboIsaac:
             if direction == "bottom" and not self.robot.move_down:
                 continue
             if direction == "floor_exit":
-                # boss exit doesn't need direction input
+                # boss exit doesn't need direction input -> new level
                 self.floor += 1
                 self.new_level = True
                 return
 
             next_room = self.level.navigate(self.current_room, direction)
-
-            # Extra safety: make sure the next room is visible
-            if not self.level.flag(next_room, 2):
-                return
-
             self.current_room = next_room
 
             # Adjust robot position depending on direction
-            if direction in ["left", "right"]:
-                self.robot.x = SCREEN_WIDTH/2 + (SCREEN_WIDTH/2 - self.robot.x - 130)
-            if direction in ["top", "bottom"]:
-                self.robot.y = SCREEN_HEIGHT/2 + (SCREEN_HEIGHT/2 - self.robot.y - 140)
+            if direction == "left":
+                self.robot.x = SCREEN_WIDTH - RIGHT_BORDER - self.robot.rect().width
+
+            elif direction == "right":
+                self.robot.x = LEFT_BORDER
+
+            elif direction == "top":
+                self.robot.y = SCREEN_HEIGHT - BOTTOM_BORDER - self.robot.rect().height
+
+            elif direction == "bottom":
+                self.robot.y = TOP_BORDER - self.robot.rect().height / 2
 
             # Reset active tears and dropped coins
             self.robot.active_tears = []
