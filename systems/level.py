@@ -10,7 +10,8 @@ class Level:
         self.start_room = start_room
         self.upgrades = upgrades
 
-    def navigate(self, room, direction): # returns connected room in "direction"
+    @staticmethod
+    def navigate(room, direction): # returns connected room in "direction"
         x, y = room
         if direction == "left":
             return x, y-1
@@ -37,9 +38,17 @@ class Level:
         rgb[flag] = int(s[:-1] + "1")
         self.set_rgb(room, tuple(rgb))
 
-    def neighbors(self, room: tuple) -> list:  # (x,y) -> i[(x+1,y),(x-1,y),(x,y+1),(x,y-1)]
-        return [(room[0] + 1, room[1]), (room[0] - 1, room[1]),
-                (room[0], room[1] + 1), (room[0], room[1] - 1)]
-
-    def out_bounds(self, r:tuple)->bool:
+    @staticmethod
+    def out_bounds(r:tuple)->bool:
         return r[0] > 6 or r[0] < 0 or r[1] > 8 or r[1] < 0
+
+    @staticmethod
+    def all_neighbors(room: tuple) -> list:  # (x,y) -> i[(x+1,y),(x-1,y),(x,y+1),(x,y-1)]
+        return [(room[0] + 1, room[1]), (room[0] - 1, room[1]),
+            (room[0], room[1] + 1), (room[0], room[1] - 1)]
+
+    def neighbors(self, room: tuple) -> list:
+        return [
+            _ for _ in self.all_neighbors(room)
+            if not self.out_bounds(_)
+        ]

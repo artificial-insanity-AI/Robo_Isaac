@@ -13,15 +13,13 @@ from systems.level_generator import LevelGenerator
 from systems.ui import UISystem
 
 
-# I found out pygame has build-in collision detection after a big part of the game was already done...
-# so some parst are kind of weird improvisation
 class RoboIsaac:
     def __init__(self) -> None:
         pygame.init()
 
         self.floor = 1              # current game level(stage) number
         self.level = None           # will hold Level object
-        self.current_room = None    # will hold Level object
+        self.current_room = None    #
 
         # per-level state
         self.robot = Robot(BORDERS) # robot object
@@ -33,7 +31,6 @@ class RoboIsaac:
 
         # UI & window
         self.window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        # initial plan was to make resolution configurable, currently it is hard-coded
         self.game_font = pygame.font.SysFont("Arial", 24)
         self.clock = pygame.time.Clock()
         pygame.display.set_caption("Robo-Isaac Game")
@@ -135,6 +132,7 @@ class RoboIsaac:
             self.process_tears()
             self.ui.draw_coins(self)
             self.ui.draw_enemies(self)
+            self.ui.draw_doors(self)
 
         pygame.display.flip()
 
@@ -146,32 +144,49 @@ class RoboIsaac:
         self.update_enemies()
 
     def update_room_transition(self):
-        if self.robot.door_collision is None:           # not near the door
-            return
 
-        if not self.level.flag(self.current_room, 0):   # room is not cleared
-            return
+        # Check if the robot collides with any visible door
+        for door_rect, direction in self.get_visible_doors():
 
-        direction = self.robot.door_collision
-        next_room = self.level.navigate(self.current_room, direction)
+            if not door_rect.colliderect(self.robot.rect()):
+                continue
 
-        if not self.level.flag(next_room, 2):   # not visible => should not have a door
-            return
+                # Must be actively moving toward that door
+            if direction == "left" and not self.robot.move_left: #TODO think about reworking robot movement
+                continue
+            if direction == "right" and not self.robot.move_right:
+                continue
+            if direction == "top" and not self.robot.move_up:
+                continue
+            if direction == "bottom" and not self.robot.move_down:
+                continue
+            if direction == "floor_exit":
+                # boss exit doesn't need direction input
+                self.floor += 1
+                self.new_level = True
+                return
 
-        self.current_room = next_room
+            next_room = self.level.navigate(self.current_room, direction)
 
-        if direction in ["left", "right"]:
-            self.robot.x = SCREEN_WIDTH/2 + (SCREEN_WIDTH/2 - self.robot.x  - 130)
-        if direction in ["top", "bottom"]:
-            self.robot.y = SCREEN_HEIGHT/2 + (SCREEN_HEIGHT/2 - self.robot.y - 140)
+            # Extra safety: make sure the next room is visible
+            if not self.level.flag(next_room, 2):
+                return
 
-        self.robot.active_tears = []
-        self.dropped_coins = []
+            self.current_room = next_room
+
+            # Adjust robot position depending on direction
+            if direction in ["left", "right"]:
+                self.robot.x = SCREEN_WIDTH/2 + (SCREEN_WIDTH/2 - self.robot.x - 130)
+            if direction in ["top", "bottom"]:
+                self.robot.y = SCREEN_HEIGHT/2 + (SCREEN_HEIGHT/2 - self.robot.y - 140)
+
+            # Reset active tears and dropped coins
+            self.robot.active_tears = []
+            self.dropped_coins = []
+
+            break  # only handle one door collision per frame
 
     def update_room_logic(self):
-        if self.level.flag(self.current_room, 0):       # cleared room?
-            self.draw_doors()                           #TODO split draw doors
-            return
 
         room_color = self.level.rgb(self.current_room)
 
@@ -234,49 +249,70 @@ class RoboIsaac:
                 tear.move_tear()     # move
                 pygame.draw.circle(self.window, tear.color, (tear.x, tear.y), tear.size, tear.size)
 
-    def draw_doors(self):
-        top, left, right, bottom = BORDERS
-        door = DOOR_IMG
-        neighbours = [i for i in self.level.neighbors(self.current_room) if not self.level.out_bounds(i)]
-        position = {"top":((SCREEN_WIDTH - left - right) / 2 + left - door.get_width() / 2, top / 2),
-                    "bottom":((SCREEN_WIDTH - left - right) / 2 + left - door.get_width() / 2, SCREEN_HEIGHT - bottom * 1.5),
-                    "left":(left*0.7,(SCREEN_HEIGHT-top-bottom)/2+top-door.get_height()/2),
-                    "right":(SCREEN_WIDTH-right*1.15,(SCREEN_HEIGHT-top-bottom)/2+top-door.get_height()/2)}
+    def get_visible_doors(self) -> list:
+        """
+        Returns a list of visible doors in the current room.
+        Each element is a tuple: (door_rect, direction)
+        Secret doors are included if discovered (hit by tear).
+        """
+        if not self.level.flag(self.current_room, 0):
+            return []       # no doors visible in uncleared room
 
-        def find_position(room:tuple):  # door! where?
+        top, left, right, bottom = BORDERS
+        visible_doors = []
+
+        def find_position(room: tuple) -> str:
+            """Returns 'top', 'bottom', 'left', 'right' relative to current room"""
             if room[1] == self.current_room[1]:
                 return "bottom" if room[0] > self.current_room[0] else "top"
-            else: return "right" if room[1] > self.current_room[1] else "left"
+            else:
+                return "right" if room[1] > self.current_room[1] else "left"
 
-        def secret_door_hit(room):      # check if hidden door was hit
+        def secret_door_hit(room: tuple) -> bool:
+            """Return True if a dead tear has unlocked the secret door"""
             secret_pos = find_position(room)
-            for tear in [i for i in self.robot.active_tears if i.is_dead == True]:
+            for tear in [t for t in self.robot.active_tears if t.is_dead]:
                 if secret_pos == tear.direction:
-                    x1 = (SCREEN_WIDTH-left-right)/2+left-door.get_width()
-                    x2 = (SCREEN_WIDTH-left-right)/2+left+door.get_width()
-                    y1 = (SCREEN_HEIGHT-top-bottom)/2+top-door.get_height()/2
-                    y2 = (SCREEN_HEIGHT-top-bottom)/2+top+door.get_height()/2
-                    if (x1 <= tear.x <= x2) or (y1 <= tear.y <= y2):
+                    # approximate door rectangle
+                    x1 = (SCREEN_WIDTH - left - right)/2 + left - DOOR_IMG.get_width()
+                    x2 = (SCREEN_WIDTH - left - right)/2 + left + DOOR_IMG.get_width()
+                    y1 = (SCREEN_HEIGHT - top - bottom)/2 + top - DOOR_IMG.get_height()/2
+                    y2 = (SCREEN_HEIGHT - top - bottom)/2 + top + DOOR_IMG.get_height()/2
+                    if x1 <= tear.x <= x2 or y1 <= tear.y <= y2:
                         return True
             return False
 
-        for i in neighbours:        # go thru connected rooms
-            if self.level.flag(i, 1):    # except secret room if it was
-                if not secret_door_hit(i) and not self.level.flag(i, 2):
-                    continue       # not hit and not discovered
-            if self.level.rgb(i) == (0,0,0): continue # also skip empty cells
-            self.level.set_flag(i, 2)           # set room as visible
-            self.window.blit(door, position[find_position(i)])  # draw a door icon
+        # Process neighbours
+        for room in self.level.neighbors(self.current_room):
+            # Skip empty cells
+            if self.level.rgb(room) == (0,0,0):
+                continue
 
+            # Secret room logic
+            if self.level.flag(room, 1):  # room is secret
+                if not secret_door_hit(room) and not self.level.flag(room, 2):
+                    continue  # still hidden (not hit and not discovered)
+
+            # Mark visible
+            self.level.set_flag(room, 2)
+            direction = find_position(room)
+
+            # Add door rectangle
+            pos_map = {
+                "top": ((SCREEN_WIDTH-left-right)/2 + left - DOOR_IMG.get_width()/2, top / 2),
+                "bottom": ((SCREEN_WIDTH-left-right)/2 + left - DOOR_IMG.get_width()/2, SCREEN_HEIGHT - bottom*1.5),
+                "left": (left*0.7, (SCREEN_HEIGHT-top-bottom)/2 + top - DOOR_IMG.get_height()/2),
+                "right": (SCREEN_WIDTH - right*1.15, (SCREEN_HEIGHT-top-bottom)/2 + top - DOOR_IMG.get_height()/2),
+            }
+            door_rect = pygame.Rect(pos_map[find_position(room)], (DOOR_IMG.get_width(), DOOR_IMG.get_height()))
+            visible_doors.append((door_rect, direction))
+
+        # Boss exit
         if self.level.rgb(self.current_room) == (251,0,1):  # cleared boss room
-            pos = pygame.Rect(450,350, door.get_width(), door.get_height())
-            randwidth = random.randint(2,5)
-            randcolor=(random.randint(0,255),random.randint(0,255),random.randint(0,255))
-            pygame.draw.rect(self.window, randcolor, pos, width=randwidth) # flashy border
-            self.window.blit(door, pos)               # draw a door icon on the floor
-            if pos.colliderect(self.robot.image.get_rect(topleft = (self.robot.x, self.robot.y))):
-                self.floor += 1                       # increase level count
-                self.new_level = True                 # set generate new level flag
+            boss_rect = pygame.Rect(450, 350, DOOR_IMG.get_width(), DOOR_IMG.get_height())
+            visible_doors.append((boss_rect, "floor_exit"))
+
+        return visible_doors
 
     def update_coin_pickups(self):
         for coin in self.dropped_coins:

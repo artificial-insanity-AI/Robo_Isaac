@@ -2,7 +2,7 @@ import random
 
 import pygame
 
-from assets import EXTRA_LIFE_IMG
+from assets import EXTRA_LIFE_IMG, DOOR_IMG
 from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class UISystem:
@@ -136,3 +136,16 @@ class UISystem:
         pygame.time.wait(1000)
         pygame.draw.rect(game.window,(25,0,0),(top,left,SCREEN_WIDTH-left-right,SCREEN_HEIGHT-top-bottom),width=1000)
         pygame.display.flip()                                      #  red screen
+
+    def draw_doors(self, game):
+        for door_rect, pos in game.get_visible_doors():
+            # flashy border for boss exit
+            if pos == "floor_exit":
+                randwidth = random.randint(2,5)
+                randcolor = (
+                    random.randint(0,255),
+                    random.randint(0,255),
+                    random.randint(0,255)
+                )
+                pygame.draw.rect(game.window, randcolor, door_rect, width=randwidth)
+            game.window.blit(DOOR_IMG, door_rect.topleft)

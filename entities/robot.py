@@ -25,7 +25,6 @@ class Robot:
         self.move_right = False
         self.move_up = False
         self.move_down = False
-        self.door_collision = None
 
         self.active_tears = [] # max can be up to self.tears stat but no more than 10
 
@@ -33,28 +32,19 @@ class Robot:
         return self.image.get_rect(topleft=(self.x, self.y))
 
     def move_robot(self):
-        self.door_collision = None
         speed = min(self.speed, 7)  # speeed limit is 7
         if self.move_right:
             if self.x < SCREEN_WIDTH-self.right_border - self.image.get_width():
                 self.x += speed
-            elif SCREEN_HEIGHT /2-60 < self.y < SCREEN_HEIGHT /2+5:   # pressing against the right wall
-                self.door_collision = "right"       ## so we set the direction
         if self.move_left:
             if self.x > 0+self.left_border:
                 self.x -= speed
-            elif SCREEN_HEIGHT/2-60 < self.y < SCREEN_HEIGHT /2+5:
-                self.door_collision = "left"
         if self.move_up:
             if self.y > 0+self.top_border-50:
                 self.y -= speed
-            elif SCREEN_WIDTH/2-80 < self.x < SCREEN_WIDTH/2-50:
-                self.door_collision = "top"
         if self.move_down:
             if self.y <= SCREEN_HEIGHT-self.bottom_border - self.image.get_height():
                 self.y += speed
-            elif SCREEN_WIDTH/2-80 < self.x < SCREEN_WIDTH/2-50:
-                self.door_collision = "bottom"
 
     def shoot(self, direction:str):        # generate a new tear if possible
         if len(self.active_tears) < 10 and len(self.active_tears) < self.tears: # active tears list is not full
