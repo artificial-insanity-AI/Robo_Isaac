@@ -12,7 +12,7 @@ class Enemy:
         self.speed = random.randint(3,min((4+level//3), 7))  # 3 - 7
         self.hp = random.randint(8,(15+level*5))    # 8 - no limit
 
-        buffer = 150                    # safe perimeter "buffer"
+        buffer = 200                    # safe perimeter "buffer"
         self.x = random.randint(self.left_border+buffer, SCREEN_WIDTH-buffer-self.right_border - self.image.get_width())
         self.y = random.randint(self.top_border+buffer, SCREEN_HEIGHT-buffer-self.bottom_border - self.image.get_height())
         self.steps_counter = 0
