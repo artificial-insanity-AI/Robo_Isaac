@@ -20,7 +20,7 @@ POTENTIAL FUTURE IMPROVEMENTS
 - prevent next-level door spawning right under the robot (teleport robot away or make the door inactive)
 - balance power-level of the enemies and the player at higher levels
 - add super enemies with flushy colors and various size
-- boss shoots huge lasers from time to time
+- [done] boss shoots huge lasers from time to time
 - [done] darker color of unexplored rooms on the minimap
 - [done] do not allow to buy HP if at maximum already
 - [done] boss hp bar

@@ -333,8 +333,17 @@ class RoboIsaac:
         self.check_room_cleared()
 
     def robot_enemy_collision(self, enemy:Enemy):
-        if not enemy.rect().colliderect(self.robot.rect()):
-            return
+        if enemy.rect().colliderect(self.robot.rect()):
+            hit = True
+        else:
+            hit = False
+
+            if isinstance(enemy, Boss) and enemy.attack_state == "firing":
+                for laser in enemy.get_lasers()[0]:
+                    if laser.colliderect(self.robot.rect()):
+                        hit = True
+
+        if not hit: return
 
         self.robot.health_points -= 1
         self.ui.draw_death_effect(self, enemy)

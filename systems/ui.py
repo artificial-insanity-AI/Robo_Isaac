@@ -4,6 +4,8 @@ import pygame
 
 from assets import EXTRA_LIFE_IMG, DOOR_IMG
 from config import BORDERS, SCREEN_WIDTH, SCREEN_HEIGHT
+from entities.boss import Boss
+
 
 class UISystem:
 
@@ -121,7 +123,21 @@ class UISystem:
 
     def draw_enemies(self, game):
         for enemy in game.enemies:
-            if not enemy.is_dead:
+            if enemy.is_dead:
+                continue
+
+            if isinstance(enemy, Boss):
+                lasers, color = enemy.get_lasers()
+                for laser in lasers:
+                    pygame.draw.rect(game.window, color, laser)
+
+                # Flash effect during charging
+                if enemy.attack_state == "charging":
+                    if pygame.time.get_ticks() // 200 % 2 == 0:
+                        game.window.blit(enemy.image, (enemy.x, enemy.y))
+                else:
+                    game.window.blit(enemy.image, (enemy.x, enemy.y))
+            else:
                 game.window.blit(enemy.image, (enemy.x, enemy.y))
 
     def draw_death_effect(self, game, enemy):
@@ -129,6 +145,9 @@ class UISystem:
         pos = enemy.rect()
         pos_r = game.robot.rect()
         pygame.draw.rect(game.window, (255,0,0), pos, width=50)    #  highlight enemy
+        if isinstance(enemy, Boss):
+            for laser in enemy.get_lasers()[0]:
+                pygame.draw.rect(game.window, (255, 0, 0), laser)
         pygame.display.flip()
         pygame.time.wait(1000)
         pygame.draw.rect(game.window, (155,0,0), pos_r, width=100) #  red robot
